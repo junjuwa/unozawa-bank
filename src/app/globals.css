@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* テーマ別カラートークン。data-theme に応じて値を切替える。 */
+:root,
+[data-theme="parent_dark"] {
+  --color-bg: #18181b;
+  --color-fg: #f4f4f5;
+  --color-primary: #52525b;
+  --color-accent: #71717a;
+}
+
+[data-theme="rei_blue"] {
+  --color-bg: #eaf6ff;
+  --color-fg: #0c4a6e;
+  --color-primary: #38bdf8;
+  --color-accent: #0ea5e9;
+}
+
+[data-theme="jun_red"] {
+  --color-bg: #fff1f2;
+  --color-fg: #1f2937;
+  --color-primary: #ef4444;
+  --color-accent: #2563eb;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
