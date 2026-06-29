@@ -7,7 +7,7 @@ type BalanceCardProps = {
 export function BalanceCard({ label, emoji, amount }: BalanceCardProps) {
   return (
     <div
-      className="rounded-[var(--radius-card)] border-2 p-5 flex items-center gap-4"
+      className="rounded-none border-2 p-5 flex items-center gap-4"
       style={{ borderColor: "var(--color-primary)" }}
     >
       <span className="text-4xl">{emoji}</span>
