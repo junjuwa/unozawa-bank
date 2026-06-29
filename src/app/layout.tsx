@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { zenMaru, rocknroll } from "./fonts";
+import { MockProviders } from "@/lib/mock/MockProviders";
 
 export const metadata: Metadata = {
   title: "おこづかいアプリ",
@@ -12,7 +13,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ja">
-      <body className={`${zenMaru.variable} ${rocknroll.variable}`}>{children}</body>
+      <body className={`${zenMaru.variable} ${rocknroll.variable}`}>
+        <MockProviders>{children}</MockProviders>
+      </body>
     </html>
   );
 }

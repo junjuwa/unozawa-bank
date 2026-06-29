@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  MockChildThemeProvider,
-  useMockChildTheme,
-} from "@/lib/theme/MockChildThemeContext";
-import { MockBalancesProvider, useMockBalances } from "@/lib/mock/MockBalancesContext";
-import { MockJobsProvider } from "@/lib/mock/MockJobsContext";
+import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
+import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { ChildHeader } from "@/components/child/ChildHeader";
 import { BottomNav } from "@/components/child/BottomNav";
 import { SideNav } from "@/components/child/SideNav";
@@ -14,7 +10,9 @@ import { THEME_LABELS } from "@/lib/theme/themes";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
 
-function ChildShell({ children }: { children: React.ReactNode }) {
+export default function ChildLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const { theme: themeKey, setTheme } = useMockChildTheme();
   const theme = childThemes[themeKey];
   // TODO(auth): name は useProfile().profile.display_name に置き換える
@@ -47,19 +45,5 @@ function ChildShell({ children }: { children: React.ReactNode }) {
       </div>
       {!isSide && <BottomNav theme={theme} />}
     </div>
-  );
-}
-
-export default function ChildLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <MockChildThemeProvider>
-      <MockBalancesProvider>
-        <MockJobsProvider>
-          <ChildShell>{children}</ChildShell>
-        </MockJobsProvider>
-      </MockBalancesProvider>
-    </MockChildThemeProvider>
   );
 }

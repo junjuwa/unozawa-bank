@@ -11,6 +11,7 @@ import { INITIAL_JOBS, MockJob } from "@/lib/mock/jobsMock";
 type MockJobsContextValue = {
   jobs: Record<ThemeKey, MockJob[]>;
   applyJob: (theme: ThemeKey, jobId: string) => void;
+  decideJob: (theme: ThemeKey, jobId: string, decision: "approved" | "rejected") => void;
 };
 
 const MockJobsContext = createContext<MockJobsContextValue | null>(null);
@@ -27,8 +28,21 @@ export function MockJobsProvider({ children }: { children: React.ReactNode }) {
     }));
   }
 
+  function decideJob(theme: ThemeKey, jobId: string, decision: "approved" | "rejected") {
+    setJobs((prev) => ({
+      ...prev,
+      [theme]: prev[theme].map((job) =>
+        job.id === jobId
+          ? { ...job, status: decision, decidedAt: new Date().toISOString() }
+          : job,
+      ),
+    }));
+  }
+
   return (
-    <MockJobsContext.Provider value={{ jobs, applyJob }}>{children}</MockJobsContext.Provider>
+    <MockJobsContext.Provider value={{ jobs, applyJob, decideJob }}>
+      {children}
+    </MockJobsContext.Provider>
   );
 }
 

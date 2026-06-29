@@ -26,6 +26,7 @@ type MockBalancesContextValue = {
     to: AccountKind,
     amount: number,
   ) => TransferResult;
+  creditReward: (theme: ThemeKey, amount: number) => void;
 };
 
 const MockBalancesContext = createContext<MockBalancesContextValue | null>(
@@ -66,8 +67,16 @@ export function MockBalancesProvider({
     return { ok: true };
   }
 
+  // design.md §1.6②: 入金（基本給・お仕事承認）は必ず「つかう(spend)」へ入る
+  function creditReward(theme: ThemeKey, amount: number) {
+    setBalances((prev) => ({
+      ...prev,
+      [theme]: { ...prev[theme], spend: prev[theme].spend + amount },
+    }));
+  }
+
   return (
-    <MockBalancesContext.Provider value={{ balances, mockTransfer }}>
+    <MockBalancesContext.Provider value={{ balances, mockTransfer, creditReward }}>
       {children}
     </MockBalancesContext.Provider>
   );

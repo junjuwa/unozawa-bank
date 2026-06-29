@@ -7,6 +7,7 @@ export type MockJob = {
   name: string;
   reward: number;
   status: JobStatus;
+  decidedAt?: string;
 };
 
 export const INITIAL_JOBS: Record<ThemeKey, MockJob[]> = {
