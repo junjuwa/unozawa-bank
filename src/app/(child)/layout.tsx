@@ -5,6 +5,7 @@ import {
   useMockChildTheme,
 } from "@/lib/theme/MockChildThemeContext";
 import { MockBalancesProvider, useMockBalances } from "@/lib/mock/MockBalancesContext";
+import { MockJobsProvider } from "@/lib/mock/MockJobsContext";
 import { ChildHeader } from "@/components/child/ChildHeader";
 import { BottomNav } from "@/components/child/BottomNav";
 import { SideNav } from "@/components/child/SideNav";
@@ -55,7 +56,9 @@ export default function ChildLayout({
   return (
     <MockChildThemeProvider>
       <MockBalancesProvider>
-        <ChildShell>{children}</ChildShell>
+        <MockJobsProvider>
+          <ChildShell>{children}</ChildShell>
+        </MockJobsProvider>
       </MockBalancesProvider>
     </MockChildThemeProvider>
   );
