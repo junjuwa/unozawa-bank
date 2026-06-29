@@ -25,12 +25,8 @@ export function ThemeToggleMock({
           className="rounded-full border-2 px-3 py-1 text-sm font-bold"
           style={
             value === option.key
-              ? {
-                  borderColor: "var(--color-primary)",
-                  background: "var(--color-primary)",
-                  color: "var(--color-bg)",
-                }
-              : { borderColor: "var(--color-accent)" }
+              ? { borderColor: "#fff", background: "#fff", color: "#111" }
+              : { borderColor: "rgba(255,255,255,.7)", color: "#fff" }
           }
         >
           {option.label}

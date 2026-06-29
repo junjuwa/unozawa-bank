@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
+import { childThemes, ChildTheme } from "@/lib/theme/childTheme";
 import {
   AccountKind,
   useMockBalances,
 } from "@/lib/mock/MockBalancesContext";
+import { CoinRow } from "@/components/child/Coin";
 
 const ACCOUNTS: { kind: AccountKind; label: string; emoji: string }[] = [
   { kind: "spend", label: "つかう", emoji: "👛" },
@@ -13,53 +15,84 @@ const ACCOUNTS: { kind: AccountKind; label: string; emoji: string }[] = [
   { kind: "grow", label: "ふやす", emoji: "🌱" },
 ];
 
-function AccountButton({
-  kind,
-  label,
+function AccountTile({
   emoji,
+  label,
   amount,
   selected,
   disabled,
   onClick,
+  theme,
 }: {
-  kind: AccountKind;
-  label: string;
   emoji: string;
+  label: string;
   amount: number;
   selected: boolean;
   disabled: boolean;
   onClick: () => void;
+  theme: ChildTheme;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-none border-2 p-4 flex-1 flex flex-col items-center gap-1 ${
-        disabled ? "opacity-40 cursor-not-allowed" : ""
-      }`}
+      className={disabled ? "opacity-40 cursor-not-allowed" : ""}
       style={{
-        borderColor: "var(--color-primary)",
-        background: selected ? "var(--color-primary)" : "transparent",
-        color: selected ? "white" : "var(--color-fg)",
+        position: "relative",
+        flex: 1,
+        background: theme.cardBg,
+        borderRadius: theme.cardRadius,
+        border: selected ? `3px solid ${theme.accent}` : theme.cardBorder,
+        boxShadow: theme.cardShadow,
+        padding: "16px 8px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        color: theme.ink,
       }}
-      key={kind}
     >
-      <span className="text-3xl">{emoji}</span>
-      <span className="text-sm font-bold">{label}</span>
-      <span className="text-xs">{new Intl.NumberFormat("ja-JP").format(amount)}円</span>
+      {selected && (
+        <span
+          style={{
+            position: "absolute",
+            top: -8,
+            right: -8,
+            width: 24,
+            height: 24,
+            borderRadius: "50%",
+            background: theme.accent,
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 14,
+            fontWeight: 900,
+            border: "2px solid #fff",
+          }}
+        >
+          ✓
+        </span>
+      )}
+      <span style={{ fontSize: 28 }}>{emoji}</span>
+      <span style={{ fontWeight: 800, fontSize: 13 }}>{label}</span>
+      <span style={{ fontSize: 11, opacity: 0.8 }}>
+        {new Intl.NumberFormat("ja-JP").format(amount)}えん
+      </span>
     </button>
   );
 }
 
 export default function TransferPage() {
-  const { theme } = useMockChildTheme();
+  const { theme: themeKey } = useMockChildTheme();
+  const theme = childThemes[themeKey];
   const { balances, mockTransfer } = useMockBalances();
-  const currentBalances = balances[theme];
+  const currentBalances = balances[themeKey];
 
   const [from, setFrom] = useState<AccountKind | null>(null);
   const [to, setTo] = useState<AccountKind | null>(null);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(0);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
@@ -80,10 +113,10 @@ export default function TransferPage() {
       setMessage({ kind: "error", text: "どこから・どこへ を えらんでね" });
       return;
     }
-    const result = mockTransfer(theme, from, to, Number(amount));
+    const result = mockTransfer(themeKey, from, to, amount);
     if (result.ok) {
       setMessage({ kind: "ok", text: "うごかしました！" });
-      setAmount("");
+      setAmount(0);
       setFrom(null);
       setTo(null);
     } else {
@@ -92,16 +125,26 @@ export default function TransferPage() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-6">
-      <section>
-        <h2 className="text-sm font-bold mb-2 opacity-80">どこから</h2>
+    <div className="flex flex-col gap-6 pt-2" style={{ fontFamily: theme.fontFamily, color: theme.ink }}>
+      <section
+        style={{
+          background: theme.cardBg,
+          borderRadius: theme.cardRadius,
+          border: theme.cardBorder,
+          boxShadow: theme.cardShadow,
+          padding: 16,
+        }}
+      >
+        <h2 style={{ fontSize: 13, fontWeight: 800, color: theme.sub, marginBottom: 10 }}>
+          どの はこ から
+        </h2>
         <div className="flex gap-2">
           {ACCOUNTS.map((account) => (
-            <AccountButton
+            <AccountTile
               key={account.kind}
-              kind={account.kind}
-              label={account.label}
+              theme={theme}
               emoji={account.emoji}
+              label={account.label}
               amount={currentBalances[account.kind]}
               selected={from === account.kind}
               disabled={account.kind === "grow"}
@@ -110,18 +153,30 @@ export default function TransferPage() {
           ))}
         </div>
         {/* design.md §1.6①: ふやすは満期までロック（早期引き出し不可） */}
-        <p className="text-xs opacity-70 mt-1">ふやすは まんきまで うごかせないよ</p>
+        <p style={{ fontSize: 11, color: theme.sub, marginTop: 8 }}>
+          ふやすは まんきまで うごかせないよ
+        </p>
       </section>
 
-      <section>
-        <h2 className="text-sm font-bold mb-2 opacity-80">どこへ</h2>
+      <section
+        style={{
+          background: theme.cardBg,
+          borderRadius: theme.cardRadius,
+          border: theme.cardBorder,
+          boxShadow: theme.cardShadow,
+          padding: 16,
+        }}
+      >
+        <h2 style={{ fontSize: 13, fontWeight: 800, color: theme.sub, marginBottom: 10 }}>
+          どの はこ へ
+        </h2>
         <div className="flex gap-2">
           {ACCOUNTS.map((account) => (
-            <AccountButton
+            <AccountTile
               key={account.kind}
-              kind={account.kind}
-              label={account.label}
+              theme={theme}
               emoji={account.emoji}
+              label={account.label}
               amount={currentBalances[account.kind]}
               selected={to === account.kind}
               disabled={from === null || account.kind === from}
@@ -131,25 +186,69 @@ export default function TransferPage() {
         </div>
       </section>
 
-      <section>
-        <h2 className="text-sm font-bold mb-2 opacity-80">いくら？</h2>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
-          className="w-full border-2 rounded-none p-3 text-2xl font-bold"
-          style={{ borderColor: "var(--color-primary)", background: "transparent", color: "var(--color-fg)" }}
-        />
+      <section
+        style={{
+          background: theme.cardBg,
+          borderRadius: theme.cardRadius,
+          border: theme.cardBorder,
+          boxShadow: theme.cardShadow,
+          padding: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 800, color: theme.sub }}>うつす かず</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setAmount((a) => Math.max(0, a - 50))}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: theme.progressTrack,
+              fontWeight: 900,
+              fontSize: 18,
+            }}
+          >
+            −
+          </button>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 900, fontSize: 20 }}>
+            <CoinRow coin={theme.coin} count={1} size={16} />
+            {amount}えん
+          </span>
+          <button
+            type="button"
+            onClick={() => setAmount((a) => a + 50)}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: theme.accent,
+              color: "#fff",
+              fontWeight: 900,
+              fontSize: 18,
+            }}
+          >
+            ＋
+          </button>
+        </div>
       </section>
 
       <button
         type="button"
         onClick={handleSubmit}
-        className="border-2 rounded-none p-4 text-lg font-bold text-white"
-        style={{ background: "var(--color-primary)", borderColor: "var(--color-primary)" }}
+        style={{
+          background: theme.accent,
+          color: "#fff",
+          borderRadius: theme.cardRadius,
+          border: theme.cardBorder !== "none" ? theme.cardBorder : "none",
+          boxShadow: theme.cardShadow,
+          padding: 16,
+          fontWeight: 900,
+          fontSize: 16,
+        }}
       >
         うごかす
       </button>
@@ -157,7 +256,7 @@ export default function TransferPage() {
       {message && (
         <p
           className="text-center font-bold"
-          style={{ color: message.kind === "error" ? "#dc2626" : "var(--color-primary)" }}
+          style={{ color: message.kind === "error" ? "#dc2626" : theme.accentInk }}
         >
           {message.text}
         </p>

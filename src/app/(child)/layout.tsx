@@ -1,29 +1,38 @@
 "use client";
 
-import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import {
   MockChildThemeProvider,
   useMockChildTheme,
 } from "@/lib/theme/MockChildThemeContext";
-import { MockBalancesProvider } from "@/lib/mock/MockBalancesContext";
+import { MockBalancesProvider, useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { ChildHeader } from "@/components/child/ChildHeader";
 import { BottomNav } from "@/components/child/BottomNav";
 import { ThemeToggleMock } from "@/components/ui/ThemeToggleMock";
 import { THEME_LABELS } from "@/lib/theme/themes";
+import { childThemes } from "@/lib/theme/childTheme";
 
 function ChildShell({ children }: { children: React.ReactNode }) {
-  const { theme, setTheme } = useMockChildTheme();
+  const { theme: themeKey, setTheme } = useMockChildTheme();
+  const theme = childThemes[themeKey];
   // TODO(auth): name は useProfile().profile.display_name に置き換える
-  const name = THEME_LABELS[theme].split("（")[0];
+  const name = THEME_LABELS[themeKey].split("（")[0];
+  const balances = useMockBalances().balances[themeKey];
+  const total = balances.spend + balances.save + balances.grow;
 
   return (
-    <ThemeProvider theme={theme}>
-      <ChildHeader name={name}>
-        <ThemeToggleMock value={theme} onChange={setTheme} />
+    <div
+      style={{
+        minHeight: "100vh",
+        background: theme.frameBg,
+        fontFamily: theme.fontFamily,
+      }}
+    >
+      <ChildHeader theme={theme} name={name} total={total}>
+        <ThemeToggleMock value={themeKey} onChange={setTheme} />
       </ChildHeader>
-      <main className="pb-24">{children}</main>
-      <BottomNav />
-    </ThemeProvider>
+      <main className="pb-28 px-4">{children}</main>
+      <BottomNav theme={theme} />
+    </div>
   );
 }
 

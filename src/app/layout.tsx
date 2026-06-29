@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { zenMaru, rocknroll } from "./fonts";
 
 export const metadata: Metadata = {
   title: "おこづかいアプリ",
@@ -11,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body className={`${zenMaru.variable} ${rocknroll.variable}`}>{children}</body>
     </html>
   );
 }

@@ -1,0 +1,79 @@
+// HANDOFF.md §3-2: ためる(もくひょう いちらん)のカード単位。
+// ホームの「ためる大カード」にも内包して使う。
+import { ChildTheme } from "@/lib/theme/childTheme";
+import { RubyText } from "@/components/child/RubyText";
+import { CoinRow } from "@/components/child/Coin";
+
+export function GoalCard({
+  theme,
+  name,
+  current,
+  target,
+}: {
+  theme: ChildTheme;
+  name: string;
+  current: number;
+  target: number;
+}) {
+  const remaining = Math.max(target - current, 0);
+  const progress = Math.min(100, Math.round((current / target) * 100));
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+        {/* 画像プレースホルダ（image-slot代替）*/}
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 12,
+            border: `2px dashed ${theme.sub}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 10,
+            color: theme.sub,
+            flexShrink: 0,
+            textAlign: "center",
+          }}
+        >
+          ほしい もの
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: theme.sub }}>
+            <RubyText segs={[["目標", "もくひょう"]]} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: theme.headingWeight >= 700 ? 900 : 700 }}>
+            {name}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          height: 14,
+          borderRadius: 7,
+          background: theme.progressTrack,
+          overflow: "hidden",
+          marginBottom: 8,
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${progress}%`,
+            background: theme.progressFill,
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <CoinRow coin={theme.coin} count={Math.max(1, Math.round(progress / 20))} />
+        <span style={{ fontSize: 14 }}>
+          あと <strong style={{ fontSize: 20, color: theme.accentInk }}>{remaining}</strong>
+          <RubyText segs={[["円", "えん"]]} />
+        </span>
+      </div>
+    </div>
+  );
+}
