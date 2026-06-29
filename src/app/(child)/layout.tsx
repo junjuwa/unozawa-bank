@@ -5,6 +5,7 @@ import {
   MockChildThemeProvider,
   useMockChildTheme,
 } from "@/lib/theme/MockChildThemeContext";
+import { MockBalancesProvider } from "@/lib/mock/MockBalancesContext";
 import { ChildHeader } from "@/components/child/ChildHeader";
 import { BottomNav } from "@/components/child/BottomNav";
 import { ThemeToggleMock } from "@/components/ui/ThemeToggleMock";
@@ -31,7 +32,9 @@ export default function ChildLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <MockChildThemeProvider>
-      <ChildShell>{children}</ChildShell>
+      <MockBalancesProvider>
+        <ChildShell>{children}</ChildShell>
+      </MockBalancesProvider>
     </MockChildThemeProvider>
   );
 }
