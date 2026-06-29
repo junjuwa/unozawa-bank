@@ -26,7 +26,13 @@ export default function HomePage() {
         goal={{ name: goal.name, current: balances.save, target: goal.target, otherCount: goal.otherCount }}
       />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+          gap: 16,
+        }}
+      >
         <BalanceCard theme={theme} label="つかう" emoji="👛" amount={balances.spend} />
         <BalanceCard theme={theme} label="ふやす" emoji="🌱" amount={balances.grow} variant="grow" />
       </div>

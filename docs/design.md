@@ -3,6 +3,8 @@
 対象：れい（スティッチ風 / ハワイアンブルー＆ネイビー）・じゅん（スパイダーマン風 / レッド＆ブルー）兄弟向け
 構成：Next.js (App Router) + Tailwind CSS / Vercel / Supabase（DB・Auth・Storage）
 
+> 子供向けUIのビジュアル正典は `docs/handoff/HANDOFF.md` ＋ `docs/handoff/Okozukai-Home.html`（命名はDBスキーマのrei_blue/jun_red/parent_dark・spend/save/growを正とし、表層トークンのみ取り込む。詳細は両ファイル参照）。
+
 ---
 
 ## 0. 設計前に確定した技術的前提（2026年6月時点・調査済み）

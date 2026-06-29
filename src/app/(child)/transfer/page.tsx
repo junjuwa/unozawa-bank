@@ -84,6 +84,37 @@ function AccountTile({
   );
 }
 
+function AmountButton({
+  theme,
+  label,
+  onClick,
+  tone,
+}: {
+  theme: ChildTheme;
+  label: string;
+  onClick: () => void;
+  tone: "plus" | "minus";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        minWidth: 52,
+        height: 40,
+        borderRadius: 20,
+        padding: "0 12px",
+        background: tone === "plus" ? theme.accent : theme.progressTrack,
+        color: tone === "plus" ? "#fff" : theme.ink,
+        fontWeight: 900,
+        fontSize: 13,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export default function TransferPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
@@ -193,46 +224,43 @@ export default function TransferPage() {
           border: theme.cardBorder,
           boxShadow: theme.cardShadow,
           padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 800, color: theme.sub }}>うつす かず</span>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setAmount((a) => Math.max(0, a - 50))}
+        <h2 style={{ fontSize: 13, fontWeight: 800, color: theme.sub, marginBottom: 10, textAlign: "center" }}>
+          うつす かず
+        </h2>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          {[1000, 100, 10].map((step) => (
+            <AmountButton
+              key={`plus-${step}`}
+              theme={theme}
+              label={`+${step}`}
+              onClick={() => setAmount((a) => a + step)}
+              tone="plus"
+            />
+          ))}
+          <span
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
-              background: theme.progressTrack,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
               fontWeight: 900,
-              fontSize: 18,
+              fontSize: 22,
+              margin: "0 10px",
             }}
           >
-            −
-          </button>
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 900, fontSize: 20 }}>
-            <CoinRow coin={theme.coin} count={1} size={16} />
+            <CoinRow coin={theme.coin} count={1} size={18} />
             {amount}えん
           </span>
-          <button
-            type="button"
-            onClick={() => setAmount((a) => a + 50)}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
-              background: theme.accent,
-              color: "#fff",
-              fontWeight: 900,
-              fontSize: 18,
-            }}
-          >
-            ＋
-          </button>
+          {[10, 100, 1000].map((step) => (
+            <AmountButton
+              key={`minus-${step}`}
+              theme={theme}
+              label={`-${step}`}
+              onClick={() => setAmount((a) => Math.max(0, a - step))}
+              tone="minus"
+            />
+          ))}
         </div>
       </section>
 
