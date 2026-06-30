@@ -209,9 +209,11 @@ export default function GoalsPage() {
           type="button"
           onClick={() => setShowAddForm(true)}
           style={{
-            border: `1px dashed ${theme.accent}`,
-            color: theme.accent,
+            background: theme.accent,
+            border: theme.cardBorder !== "none" ? theme.cardBorder : "none",
+            color: "#fff",
             borderRadius: theme.cardRadius,
+            boxShadow: theme.cardShadow,
             padding: "14px 0",
             fontWeight: 800,
             fontSize: 14,

@@ -10,6 +10,7 @@ import { MockJobsProvider } from "@/lib/mock/MockJobsContext";
 import { MockSettingsProvider } from "@/lib/mock/MockSettingsContext";
 import { MockAvatarsProvider } from "@/lib/mock/MockAvatarsContext";
 import { MockGoalsProvider } from "@/lib/mock/MockGoalsContext";
+import { MockMascotProvider } from "@/lib/mock/MockMascotContext";
 
 export function MockProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -18,7 +19,9 @@ export function MockProviders({ children }: { children: React.ReactNode }) {
         <MockJobsProvider>
           <MockSettingsProvider>
             <MockAvatarsProvider>
-              <MockGoalsProvider>{children}</MockGoalsProvider>
+              <MockGoalsProvider>
+                <MockMascotProvider>{children}</MockMascotProvider>
+              </MockGoalsProvider>
             </MockAvatarsProvider>
           </MockSettingsProvider>
         </MockJobsProvider>

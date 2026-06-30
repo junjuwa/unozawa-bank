@@ -10,6 +10,7 @@ import {
 import { useAccounts } from "@/hooks/useAccounts";
 import { transferMoney } from "@/lib/money/rpc";
 import { BoxIcon } from "@/components/child/boxIcons";
+import { ConfirmPopup } from "@/components/child/ConfirmPopup";
 
 // transfer_money RPC(supabase/migrations/0001_init.sql)の例外メッセージを
 // モックと同じひらがなメッセージにマッピングする
@@ -35,6 +36,7 @@ function AccountTile({
   disabled,
   onClick,
   theme,
+  hint,
 }: {
   kind: AccountKind;
   label: string;
@@ -43,56 +45,62 @@ function AccountTile({
   disabled: boolean;
   onClick: () => void;
   theme: ChildTheme;
+  hint?: string;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={disabled ? "opacity-40 cursor-not-allowed" : ""}
-      style={{
-        position: "relative",
-        flex: 1,
-        background: theme.cardBg,
-        borderRadius: theme.cardRadius,
-        border: selected ? `3px solid ${theme.accent}` : theme.cardBorder,
-        boxShadow: theme.cardShadow,
-        padding: "16px 8px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 4,
-        color: theme.ink,
-      }}
-    >
-      {selected && (
-        <span
-          style={{
-            position: "absolute",
-            top: -8,
-            right: -8,
-            width: 24,
-            height: 24,
-            borderRadius: "50%",
-            background: theme.accent,
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 14,
-            fontWeight: 900,
-            border: "2px solid #fff",
-          }}
-        >
-          ✓
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={disabled ? "opacity-40 cursor-not-allowed" : ""}
+        style={{
+          position: "relative",
+          width: "100%",
+          background: theme.cardBg,
+          borderRadius: theme.cardRadius,
+          border: selected ? `3px solid ${theme.accent}` : theme.cardBorder,
+          boxShadow: theme.cardShadow,
+          padding: "16px 8px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
+          color: theme.ink,
+        }}
+      >
+        {selected && (
+          <span
+            style={{
+              position: "absolute",
+              top: -8,
+              right: -8,
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              background: theme.accent,
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 14,
+              fontWeight: 900,
+              border: "2px solid #fff",
+            }}
+          >
+            ✓
+          </span>
+        )}
+        <BoxIcon kind={kind} size={28} />
+        <span style={{ fontWeight: 800, fontSize: 13 }}>{label}</span>
+        <span style={{ fontSize: 11, opacity: 0.8 }}>
+          {new Intl.NumberFormat("ja-JP").format(amount)}えん
         </span>
+      </button>
+      {hint && (
+        <p style={{ fontSize: 10, color: theme.sub, textAlign: "center", lineHeight: 1.3 }}>{hint}</p>
       )}
-      <BoxIcon kind={kind} size={28} />
-      <span style={{ fontWeight: 800, fontSize: 13 }}>{label}</span>
-      <span style={{ fontSize: 11, opacity: 0.8 }}>
-        {new Intl.NumberFormat("ja-JP").format(amount)}えん
-      </span>
-    </button>
+    </div>
   );
 }
 
@@ -142,6 +150,7 @@ export default function TransferPage() {
   const [to, setTo] = useState<AccountKind | null>(null);
   const [amount, setAmount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
@@ -157,11 +166,22 @@ export default function TransferPage() {
     setMessage(null);
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!from || !to) {
       setMessage({ kind: "error", text: "どこから・どこへ を えらんでね" });
       return;
     }
+    // ふやすに入れると満期まで動かせなくなるため、実行前に確認する
+    if (to === "grow") {
+      setShowLockConfirm(true);
+      return;
+    }
+    executeTransfer();
+  }
+
+  async function executeTransfer() {
+    if (!from || !to) return;
+    setShowLockConfirm(false);
 
     if (accounts) {
       setSubmitting(true);
@@ -215,13 +235,12 @@ export default function TransferPage() {
               selected={from === account.kind}
               disabled={account.kind === "grow"}
               onClick={() => handleSelectFrom(account.kind)}
+              // design.md §1.6①: ふやすは満期までロック（早期引き出し不可）。
+              // ふやすタイルの直下にだけヒントを出す
+              hint={account.kind === "grow" ? "まんきまで うごかせないよ" : undefined}
             />
           ))}
         </div>
-        {/* design.md §1.6①: ふやすは満期までロック（早期引き出し不可） */}
-        <p style={{ fontSize: 11, color: theme.sub, marginTop: 8 }}>
-          ふやすは まんきまで うごかせないよ
-        </p>
       </section>
 
       <section
@@ -324,6 +343,18 @@ export default function TransferPage() {
         >
           {message.text}
         </p>
+      )}
+
+      {showLockConfirm && (
+        <ConfirmPopup
+          theme={theme}
+          title="ほんとうに いい？"
+          message={`${amount}えん を ふやすに いれると、まんきまで うごかせなくなるよ。`}
+          confirmLabel="うん、いれる"
+          cancelLabel="やめる"
+          onConfirm={executeTransfer}
+          onCancel={() => setShowLockConfirm(false)}
+        />
       )}
     </div>
   );

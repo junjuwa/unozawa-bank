@@ -8,10 +8,12 @@ export function Mascot({
   theme,
   themeKey,
   message,
+  imageUrl,
 }: {
   theme: ChildTheme;
   themeKey: ThemeKey;
   message: string;
+  imageUrl?: string | null;
 }) {
   const svg = themeKey === "rei_blue" || themeKey === "jun_red" ? MASCOT_SVG[themeKey] : null;
 
@@ -24,7 +26,22 @@ export function Mascot({
         padding: "0 18px 10px",
       }}
     >
-      {svg ? (
+      {imageUrl ? (
+        <span
+          style={{
+            flexShrink: 0,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            overflow: "hidden",
+            border: "3px solid #fff",
+            boxShadow: theme.cardShadow,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- モックのdata URL表示のため */}
+          <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </span>
+      ) : svg ? (
         <div
           style={{ flexShrink: 0, width: 48, height: 56 }}
           // 静的な信頼済みアセット(mascotArt.ts)のみを描画する。ユーザー入力は含まれない。

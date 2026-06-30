@@ -5,6 +5,7 @@ import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockGoals } from "@/lib/mock/MockGoalsContext";
+import { useMockMascot } from "@/lib/mock/MockMascotContext";
 import { useAccounts } from "@/hooks/useAccounts";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
@@ -20,10 +21,16 @@ export default function HomePage() {
   const childGoals = useMockGoals().goals[themeKey];
   const activeGoal = childGoals.find((g) => g.active);
   const otherCount = childGoals.length - (activeGoal ? 1 : 0);
+  const mascotImageUrl = useMockMascot().mascots[themeKey];
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <Mascot theme={theme} themeKey={themeKey} message="今日も おかねを ためよう！" />
+      <Mascot
+        theme={theme}
+        themeKey={themeKey}
+        message="今日も おかねを ためよう！"
+        imageUrl={mascotImageUrl}
+      />
 
       {/* HANDOFF.md §3: ためるカードはボトムナビ項目ではなく、ホームからのタップで /goals へ遷移 */}
       <Link href="/goals">
