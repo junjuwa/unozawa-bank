@@ -54,12 +54,7 @@ export default function ApprovalsPage() {
 
     return (
       <div className="flex flex-col gap-5 pt-2">
-        {debugError && (
-          <p style={{ fontSize: 11, color: "#E26D62", background: "#2a1a1a", borderRadius: 8, padding: "6px 10px", marginBottom: 8, wordBreak: "break-all" }}>
-            🔍 DEBUG: {debugError}
-          </p>
-        )}
-        <div className="flex gap-2 items-center">
+<div className="flex gap-2 items-center">
           {(["all", ...CHILDREN] as const).map((key) => (
             <button
               key={key}
