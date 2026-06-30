@@ -173,7 +173,6 @@ export default function SetupPage() {
 
 // 既存アカウントへのパスキー追加セクション
 function AddPasskeySection({ theme }: { theme: ChildTheme }) {
-  const router = useRouter();
   const [addThemeKey, setAddThemeKey] = useState<"rei_blue" | "jun_red">("rei_blue");
   const [addStep, setAddStep] = useState<"idle" | "signingIn" | "registering" | "done">("idle");
   const [addError, setAddError] = useState<string | null>(null);

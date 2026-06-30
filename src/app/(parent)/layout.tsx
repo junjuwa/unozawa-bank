@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { childThemes } from "@/lib/theme/childTheme";
 import { ParentBottomNav } from "@/components/parent/ParentBottomNav";
 import { useProfile } from "@/hooks/useProfile";
+import { PinGate } from "@/components/ui/PinGate";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ParentLayout({
@@ -14,6 +15,8 @@ export default function ParentLayout({
   const router = useRouter();
   const displayName =
     typeof profile?.display_name === "string" ? profile.display_name : "おとうさん";
+  const userId = (profile as { id?: string } | null)?.id ?? null;
+  const hasPinHash = !!(profile as { pin_hash?: string | null } | null)?.pin_hash;
 
   async function handleLogout() {
     const supabase = createClient();
@@ -22,6 +25,7 @@ export default function ParentLayout({
   }
 
   return (
+    <PinGate userId={userId} hasPinHash={hasPinHash} userName={displayName} accentColor={theme.accent}>
     <div
       style={{
         minHeight: "100vh",
@@ -62,5 +66,6 @@ export default function ParentLayout({
       </main>
       <ParentBottomNav theme={theme} />
     </div>
+    </PinGate>
   );
 }

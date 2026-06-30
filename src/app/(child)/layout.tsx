@@ -12,6 +12,7 @@ import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
 import { useProfile } from "@/hooks/useProfile";
 import { useAccounts } from "@/hooks/useAccounts";
 import { FrameDecoration } from "@/components/child/FrameDecoration";
+import { PinGate } from "@/components/ui/PinGate";
 import { useEffect } from "react";
 import { ThemeKey } from "@/lib/theme/themes";
 
@@ -50,7 +51,16 @@ export default function ChildLayout({
   const layoutMode = useChildLayoutMode();
   const isSide = layoutMode === "side";
 
+  const userId = (profile as { id?: string } | null)?.id ?? null;
+  const hasPinHash = !!(profile as { pin_hash?: string | null } | null)?.pin_hash;
+
   return (
+    <PinGate
+      userId={userId}
+      hasPinHash={hasPinHash}
+      userName={name}
+      accentColor={theme.accent}
+    >
     <div
       style={{
         minHeight: "100vh",
@@ -74,5 +84,6 @@ export default function ChildLayout({
       </div>
       {!isSide && <BottomNav theme={theme} />}
     </div>
+    </PinGate>
   );
 }

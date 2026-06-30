@@ -43,3 +43,8 @@ export async function payCustomAmount(profileId: string, amount: number) {
   const supabase = createClient();
   return supabase.rpc("pay_custom_amount", { p_profile_id: profileId, p_amount: amount });
 }
+
+export async function setPin(profileId: string, pin: string) {
+  const supabase = createClient();
+  return supabase.rpc("set_pin", { p_profile_id: profileId, p_pin: pin });
+}

@@ -7,7 +7,8 @@ import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useFamilySettings } from "@/hooks/useFamilySettings";
 import { useJobCatalogAdmin } from "@/hooks/useJobCatalogAdmin";
 import { useFamilyOverview } from "@/hooks/useFamilyOverview";
-import { paySalaryNow, payCustomAmount } from "@/lib/money/rpc";
+import { paySalaryNow, payCustomAmount, setPin } from "@/lib/money/rpc";
+import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { SettingRow } from "@/components/parent/SettingRow";
@@ -39,6 +40,7 @@ export default function SettingsPage() {
     removeJobTask,
   } = useJobCatalogAdmin();
   const { overview, refetch: refetchOverview } = useFamilyOverview();
+  const { profile: parentProfile } = useProfile();
   const isReal = familySettings !== null;
 
   const [salaryMessage, setSalaryMessage] = useState<string | null>(null);
@@ -87,8 +89,25 @@ export default function SettingsPage() {
   const [passkeyMessage, setPasskeyMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
+  const [pinInputs, setPinInputs] = useState<Record<string, string>>({});
+  const [pinMessages, setPinMessages] = useState<Record<string, { kind: "ok" | "error"; text: string }>>({});
 
   if (settingsLoading || catalogLoading) return <LoadingScreen />;
+
+  async function handleSetPin(profileId: string) {
+    const pin = pinInputs[profileId] ?? "";
+    if (!/^\d{4}$/.test(pin)) {
+      setPinMessages((m) => ({ ...m, [profileId]: { kind: "error", text: "4けたの すうじを にゅうりょくしてください" } }));
+      return;
+    }
+    const { error } = await setPin(profileId, pin);
+    if (error) {
+      setPinMessages((m) => ({ ...m, [profileId]: { kind: "error", text: error.message } }));
+    } else {
+      setPinMessages((m) => ({ ...m, [profileId]: { kind: "ok", text: "あんしょうばんごうを せってい しました" } }));
+      setPinInputs((v) => ({ ...v, [profileId]: "" }));
+    }
+  }
 
   async function handleRegisterPasskey() {
     setPasskeyMessage(null);
@@ -544,6 +563,43 @@ export default function SettingsPage() {
         </section>
       )}
 
+      {isReal && (
+        <section
+          style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}
+        >
+          <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>あんしょうばんごう（PIN）</h2>
+          <p style={{ fontSize: 11, color: theme.sub, marginBottom: 12 }}>
+            パスキーでログインした後に入力する4けたの番号です。共用端末でのなりすまし防止に使います。
+          </p>
+          {parentProfile?.id ? (
+            <PinSetRow
+              label="おや"
+              profileId={String(parentProfile.id)}
+              selfPin
+              pinValue={pinInputs[String(parentProfile.id)] ?? ""}
+              onPinChange={(v) => setPinInputs((m) => ({ ...m, [String(parentProfile!.id)]: v }))}
+              message={pinMessages[String(parentProfile.id)] ?? null}
+              onSave={() => handleSetPin(String(parentProfile!.id))}
+              theme={theme}
+            />
+          ) : null}
+          {/* 子供ごとのPIN */}
+          {(overview ?? []).map((child) => (
+            <PinSetRow
+              key={child.profileId}
+              label={child.displayName}
+              profileId={child.profileId}
+              selfPin={false}
+              pinValue={pinInputs[child.profileId] ?? ""}
+              onPinChange={(v) => setPinInputs((m) => ({ ...m, [child.profileId]: v }))}
+              message={pinMessages[child.profileId] ?? null}
+              onSave={() => handleSetPin(child.profileId)}
+              theme={theme}
+            />
+          ))}
+        </section>
+      )}
+
       <section
         style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}
       >
@@ -578,6 +634,71 @@ export default function SettingsPage() {
           パスキーを登録する
         </button>
       </section>
+    </div>
+  );
+}
+
+function PinSetRow({
+  label,
+  pinValue,
+  onPinChange,
+  message,
+  onSave,
+  theme,
+}: {
+  label: string;
+  profileId: string | null;
+  selfPin: boolean;
+  pinValue: string;
+  onPinChange: (v: string) => void;
+  message: { kind: "ok" | "error"; text: string } | null;
+  onSave: () => void;
+  theme: import("@/lib/theme/childTheme").ChildTheme;
+}) {
+  return (
+    <div style={{ borderBottom: "1px solid #3A424C", padding: "10px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ flex: 1, fontSize: 13, color: theme.ink, fontWeight: 700 }}>{label}</span>
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={4}
+          placeholder="4けた"
+          value={pinValue}
+          onChange={(e) => onPinChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
+          style={{
+            width: 72,
+            textAlign: "center",
+            background: theme.frameBg,
+            color: theme.ink,
+            border: "1px solid #3A424C",
+            borderRadius: 8,
+            padding: "7px 8px",
+            fontSize: 16,
+            letterSpacing: 4,
+          }}
+        />
+        <button
+          type="button"
+          onClick={onSave}
+          style={{
+            background: theme.accent,
+            color: "#fff",
+            borderRadius: 8,
+            padding: "7px 14px",
+            fontWeight: 700,
+            fontSize: 12,
+            whiteSpace: "nowrap",
+          }}
+        >
+          セット
+        </button>
+      </div>
+      {message && (
+        <p style={{ fontSize: 11, marginTop: 4, color: message.kind === "ok" ? "#3DB66E" : "#E26D62" }}>
+          {message.text}
+        </p>
+      )}
     </div>
   );
 }
