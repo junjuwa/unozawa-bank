@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { childThemes } from "@/lib/theme/childTheme";
-import { HOME_GOALS } from "@/lib/mock/homeGoals";
+import { useMockGoals } from "@/lib/mock/MockGoalsContext";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
 
@@ -13,7 +13,9 @@ export default function HomePage() {
   const theme = childThemes[themeKey];
   // TODO(auth): accountsテーブルをprofile_idで取得し、kind別にマッピングする
   const balances = useMockBalances().balances[themeKey];
-  const goal = HOME_GOALS[themeKey];
+  const childGoals = useMockGoals().goals[themeKey];
+  const activeGoal = childGoals.find((g) => g.active);
+  const otherCount = childGoals.length - (activeGoal ? 1 : 0);
 
   return (
     <div className="flex flex-col gap-4 pt-2">
@@ -28,7 +30,11 @@ export default function HomePage() {
           label="ためる"
           icon={<span style={{ fontSize: 20 }}>🐷</span>}
           amount={balances.save}
-          goal={{ name: goal.name, current: balances.save, target: goal.target, otherCount: goal.otherCount }}
+          goal={
+            activeGoal
+              ? { name: activeGoal.name, current: balances.save, target: activeGoal.target, otherCount }
+              : undefined
+          }
         />
       </Link>
 
