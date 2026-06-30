@@ -13,6 +13,8 @@ import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
 import { useProfile } from "@/hooks/useProfile";
 import { useAccounts } from "@/hooks/useAccounts";
 import { FrameDecoration } from "@/components/child/FrameDecoration";
+import { useEffect } from "react";
+import { ThemeKey } from "@/lib/theme/themes";
 
 export default function ChildLayout({
   children,
@@ -20,19 +22,24 @@ export default function ChildLayout({
   const { theme: themeKey, setTheme } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const { profile } = useProfile();
-  // 実ログイン済みかつtheme_keyが一致する場合のみ実名を使う。
-  // ThemeToggleMockでテーマを切り替えた場合はモック名にフォールバックし名前が変わるようにする。
+
+  // 実ログイン済みの場合はプロフィールのtheme_keyに合わせてテーマを自動切替
+  useEffect(() => {
+    const profileTheme = (profile as { theme_key?: string } | null)?.theme_key;
+    if (profileTheme && profileTheme !== themeKey) {
+      setTheme(profileTheme as ThemeKey);
+    }
+  }, [profile, themeKey, setTheme]);
+
+  // 実ログイン済みかつtheme_keyが一致する場合のみ実名を使う
   const name =
     profile && (profile as { theme_key?: string }).theme_key === themeKey
       ? (profile.display_name as string)
       : THEME_LABELS[themeKey].split("（")[0];
   const { accounts } = useAccounts();
   const mockBalances = useMockBalances().balances[themeKey];
-  // 実ログイン済みかつtheme_keyが一致すれば実残高、そうでなければモック残高
-  const balances =
-    accounts && (profile as { theme_key?: string } | null)?.theme_key === themeKey
-      ? accounts
-      : mockBalances;
+  // 実ログイン済みならaccountsをそのまま使う（useAccountsは自分のアカウントのみ取得）
+  const balances = accounts ?? mockBalances;
   const total = balances.spend + balances.save + balances.grow;
   const mockAvatarUrl = useMockAvatars().avatars[themeKey];
   // 実ログイン済みかつtheme_keyが一致すればDBのavatar_urlを優先、それ以外はモックにフォールバック
