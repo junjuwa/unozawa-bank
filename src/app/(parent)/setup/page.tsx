@@ -89,8 +89,10 @@ export default function SetupPage() {
     <div className="flex flex-col gap-5 pt-2">
       <h1 style={{ fontWeight: 800, fontSize: 18, color: theme.ink }}>はじめての せってい</h1>
       <p style={{ fontSize: 12, color: theme.sub }}>
-        子のパスキー登録は、初回だけ親が橋渡しします（design.md §5）。
+        子のパスキー登録は、初回だけ親が橋渡しします。
+        アカウントが既にある場合は下の「パスキーを追加」から。
       </p>
+      <AddPasskeySection theme={theme} />
 
       <div className="flex flex-col gap-3">
         {STEPS.map((step, i) => (
@@ -165,6 +167,93 @@ export default function SetupPage() {
                 ? "パスキーを登録"
                 : "おやログインへ もどる"}
       </button>
+    </div>
+  );
+}
+
+// 既存アカウントへのパスキー追加セクション
+function AddPasskeySection({ theme }: { theme: ChildTheme }) {
+  const router = useRouter();
+  const [addThemeKey, setAddThemeKey] = useState<"rei_blue" | "jun_red">("rei_blue");
+  const [addStep, setAddStep] = useState<"idle" | "signingIn" | "registering" | "done">("idle");
+  const [addError, setAddError] = useState<string | null>(null);
+  const [hashedToken, setHashedToken] = useState<string | null>(null);
+
+  async function handleGetLink() {
+    setAddError(null);
+    setAddStep("signingIn");
+    const res = await fetch("/api/admin/child-passkey-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ themeKey: addThemeKey }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setAddError(data.error); setAddStep("idle"); return; }
+    setHashedToken(data.hashedToken);
+  }
+
+  async function handleTempSignIn() {
+    if (!hashedToken) return;
+    setAddError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({ token_hash: hashedToken, type: "email" });
+    if (error) { setAddError(error.message); setAddStep("idle"); return; }
+    setAddStep("registering");
+  }
+
+  async function handleRegister() {
+    setAddError(null);
+    const { error } = await registerPasskey();
+    if (error) { setAddError(error.message); return; }
+    setAddStep("done");
+    const supabase = createClient();
+    await supabase.auth.signOut();
+  }
+
+  return (
+    <div style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontWeight: 800, fontSize: 14, color: theme.ink }}>既存アカウントにパスキーを追加</p>
+      {addStep === "done" ? (
+        <p style={{ color: "#3DB66E", fontWeight: 700, fontSize: 13 }}>
+          登録完了！親ログインへ戻ってください。
+        </p>
+      ) : (
+        <>
+          <div className="flex gap-2">
+            {(["rei_blue", "jun_red"] as const).map((key) => (
+              <button key={key} type="button" onClick={() => setAddThemeKey(key)}
+                style={{ flex: 1, borderRadius: 12, padding: "7px 0", fontSize: 13, fontWeight: 700,
+                  background: addThemeKey === key ? theme.accent : "transparent",
+                  color: addThemeKey === key ? "#fff" : theme.sub,
+                  border: `1px solid ${addThemeKey === key ? theme.accent : "#3A424C"}` }}>
+                {THEME_LABELS[key].split("（")[0]}
+              </button>
+            ))}
+          </div>
+          {addStep === "idle" && (
+            <button type="button" onClick={handleGetLink}
+              style={{ background: theme.accent, color: "#fff", borderRadius: 12, padding: "10px 0", fontWeight: 800, fontSize: 13 }}>
+              子の端末で → 一時サインインを準備
+            </button>
+          )}
+          {addStep === "signingIn" && hashedToken && (
+            <button type="button" onClick={handleTempSignIn}
+              style={{ background: theme.accent, color: "#fff", borderRadius: 12, padding: "10px 0", fontWeight: 800, fontSize: 13 }}>
+              一時サインイン（子の端末でタップ）
+            </button>
+          )}
+          {addStep === "signingIn" && !hashedToken && (
+            <p style={{ fontSize: 12, color: theme.sub }}>リンク取得中…</p>
+          )}
+          {addStep === "registering" && (
+            <button type="button" onClick={handleRegister}
+              style={{ background: "#3DB66E", color: "#fff", borderRadius: 12, padding: "10px 0", fontWeight: 800, fontSize: 13 }}>
+              パスキーを登録（子の端末でタップ）
+            </button>
+          )}
+          {addError && <p style={{ color: "#E26D62", fontSize: 12 }}>{addError}</p>}
+        </>
+      )}
     </div>
   );
 }

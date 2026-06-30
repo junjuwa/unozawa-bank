@@ -18,7 +18,7 @@ export default function ApprovalsPage() {
   const { jobs, decideJob } = useMockJobs();
   const { creditReward } = useMockBalances();
   const { settings } = useMockSettings();
-  const { requests, loading: requestsLoading, refetch, debugError } = useFamilyJobRequests();
+  const { requests, loading: requestsLoading, refetch } = useFamilyJobRequests();
   const [filter, setFilter] = useState<"all" | ThemeKey>("all");
 
   // 30秒ごとに自動更新（子が申請後に親が更新ボタンを押さなくても反映される）
