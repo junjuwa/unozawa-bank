@@ -5,14 +5,17 @@ import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockGoals } from "@/lib/mock/MockGoalsContext";
+import { useAccounts } from "@/hooks/useAccounts";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
 
 export default function HomePage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
-  // TODO(auth): accountsテーブルをprofile_idで取得し、kind別にマッピングする
-  const balances = useMockBalances().balances[themeKey];
+  // 実ログイン済みならaccountsテーブルの実残高、未ログインならモックにフォールバック
+  const { accounts } = useAccounts();
+  const mockBalances = useMockBalances().balances[themeKey];
+  const balances = accounts ?? mockBalances;
   const childGoals = useMockGoals().goals[themeKey];
   const activeGoal = childGoals.find((g) => g.active);
   const otherCount = childGoals.length - (activeGoal ? 1 : 0);

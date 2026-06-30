@@ -7,6 +7,18 @@ import {
   AccountKind,
   useMockBalances,
 } from "@/lib/mock/MockBalancesContext";
+import { useAccounts } from "@/hooks/useAccounts";
+import { transferMoney } from "@/lib/money/rpc";
+
+// transfer_money RPC(supabase/migrations/0001_init.sql)の例外メッセージを
+// モックと同じひらがなメッセージにマッピングする
+function mapRpcError(message: string): string {
+  if (message.includes("insufficient balance")) return "おかねがたりないよ";
+  if (message.includes("same account")) return "おなじはこにはうごかせないよ";
+  if (message.includes("grow is locked")) return "ふやすは まんきまで うごかせないよ";
+  if (message.includes("amount must be positive")) return "きんがくをいれてね";
+  return message;
+}
 
 const ACCOUNTS: { kind: AccountKind; label: string; emoji: string }[] = [
   { kind: "spend", label: "つかう", emoji: "👛" },
@@ -121,11 +133,14 @@ export default function TransferPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const { balances, mockTransfer } = useMockBalances();
-  const currentBalances = balances[themeKey];
+  const { accounts, refetch } = useAccounts();
+  // 実ログイン済みならaccountsテーブルの実残高、未ログインならモックにフォールバック
+  const currentBalances = accounts ?? balances[themeKey];
 
   const [from, setFrom] = useState<AccountKind | null>(null);
   const [to, setTo] = useState<AccountKind | null>(null);
   const [amount, setAmount] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
@@ -141,11 +156,28 @@ export default function TransferPage() {
     setMessage(null);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!from || !to) {
       setMessage({ kind: "error", text: "どこから・どこへ を えらんでね" });
       return;
     }
+
+    if (accounts) {
+      setSubmitting(true);
+      const { error } = await transferMoney(from, to, amount);
+      setSubmitting(false);
+      if (error) {
+        setMessage({ kind: "error", text: mapRpcError(error.message) });
+        return;
+      }
+      setMessage({ kind: "ok", text: "うごかしました！" });
+      setAmount(0);
+      setFrom(null);
+      setTo(null);
+      refetch();
+      return;
+    }
+
     const result = mockTransfer(themeKey, from, to, amount);
     if (result.ok) {
       setMessage({ kind: "ok", text: "うごかしました！" });
@@ -268,6 +300,7 @@ export default function TransferPage() {
       <button
         type="button"
         onClick={handleSubmit}
+        disabled={submitting}
         style={{
           background: theme.accent,
           color: "#fff",
@@ -277,9 +310,10 @@ export default function TransferPage() {
           padding: 16,
           fontWeight: 900,
           fontSize: 16,
+          opacity: submitting ? 0.6 : 1,
         }}
       >
-        うごかす
+        {submitting ? "うごかしちゅう…" : "うごかす"}
       </button>
 
       {message && (
