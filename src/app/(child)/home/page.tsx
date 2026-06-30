@@ -11,16 +11,17 @@ import { useGoals } from "@/hooks/useGoals";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
 import { BoxIcon } from "@/components/child/boxIcons";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function HomePage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
   // 実ログイン済みならaccountsテーブルの実残高、未ログインならモックにフォールバック
-  const { accounts } = useAccounts();
+  const { accounts, loading: accountsLoading } = useAccounts();
   const mockBalances = useMockBalances().balances[themeKey];
   const balances = accounts ?? mockBalances;
 
-  const { goals: realGoals } = useGoals();
+  const { goals: realGoals, loading: goalsLoading } = useGoals();
   const mockGoals = useMockGoals().goals[themeKey];
   const childGoals = realGoals ?? mockGoals;
   const activeGoal = childGoals.find((g) => g.active);
@@ -29,6 +30,8 @@ export default function HomePage() {
     : undefined;
   const otherCount = childGoals.length - (activeGoal ? 1 : 0);
   const mascotImageUrl = useMockMascot().mascots[themeKey];
+
+  if (accountsLoading || goalsLoading) return <LoadingScreen />;
 
   return (
     <div className="flex flex-col gap-4 pt-2">

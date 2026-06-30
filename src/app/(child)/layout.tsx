@@ -11,6 +11,7 @@ import { THEME_LABELS } from "@/lib/theme/themes";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
 import { useProfile } from "@/hooks/useProfile";
+import { FrameDecoration } from "@/components/child/FrameDecoration";
 
 export default function ChildLayout({
   children,
@@ -18,14 +19,21 @@ export default function ChildLayout({
   const { theme: themeKey, setTheme } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const { profile } = useProfile();
-  // 実ログイン済みなら実プロフィールの表示名、未ログインならモック名にフォールバック
+  // 実ログイン済みかつtheme_keyが一致する場合のみ実名を使う。
+  // ThemeToggleMockでテーマを切り替えた場合はモック名にフォールバックし名前が変わるようにする。
   const name =
-    typeof profile?.display_name === "string"
-      ? profile.display_name
+    profile && (profile as { theme_key?: string }).theme_key === themeKey
+      ? (profile.display_name as string)
       : THEME_LABELS[themeKey].split("（")[0];
   const balances = useMockBalances().balances[themeKey];
   const total = balances.spend + balances.save + balances.grow;
-  const avatarUrl = useMockAvatars().avatars[themeKey];
+  const mockAvatarUrl = useMockAvatars().avatars[themeKey];
+  // 実ログイン済みかつtheme_keyが一致すればDBのavatar_urlを優先、それ以外はモックにフォールバック
+  const realAvatarUrl =
+    profile && (profile as { theme_key?: string; avatar_url?: string | null }).theme_key === themeKey
+      ? ((profile as { avatar_url?: string | null }).avatar_url ?? null)
+      : null;
+  const avatarUrl = realAvatarUrl ?? mockAvatarUrl;
   const layoutMode = useChildLayoutMode();
   const isSide = layoutMode === "side";
 
@@ -36,10 +44,13 @@ export default function ChildLayout({
         background: theme.frameBg,
         fontFamily: theme.fontFamily,
         display: isSide ? "flex" : "block",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      <FrameDecoration themeKey={themeKey} />
       {isSide && <SideNav theme={theme} />}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
         <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl}>
           <ThemeToggleMock value={themeKey} onChange={setTheme} />
         </ChildHeader>

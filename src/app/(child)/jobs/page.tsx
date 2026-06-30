@@ -4,32 +4,44 @@ import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockJobs } from "@/lib/mock/MockJobsContext";
 import { useMockSettings } from "@/lib/mock/MockSettingsContext";
+import { useState } from "react";
 import { useJobCatalog } from "@/hooks/useJobCatalog";
 import { useMyJobRequests } from "@/hooks/useJobRequests";
 import { createClient } from "@/lib/supabase/client";
 import { JobCard } from "@/components/child/JobCard";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function JobsPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
 
-  const { catalog } = useJobCatalog();
-  const { requests, refetch } = useMyJobRequests();
+  const { catalog, loading: catalogLoading } = useJobCatalog();
+  const { requests, loading: requestsLoading, refetch } = useMyJobRequests();
   const { jobs, applyJob } = useMockJobs();
   const { settings } = useMockSettings();
+
+  const [applyMessage, setApplyMessage] = useState<{ taskId: string; ok: boolean; text: string } | null>(null);
+
+  if (catalogLoading || requestsLoading) return <LoadingScreen />;
 
   // 実ログイン済み（catalog !== null）なら実DB、未ログインならモックにフォールバック
   if (catalog) {
     async function handleApply(taskId: string, reward: number) {
+      setApplyMessage(null);
       const supabase = createClient();
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return;
-      await supabase.from("job_requests").insert({
+      const { error } = await supabase.from("job_requests").insert({
         profile_id: userData.user.id,
         task_id: taskId,
         reward_snapshot: reward,
         status: "pending",
       });
+      if (error) {
+        setApplyMessage({ taskId, ok: false, text: "しんせいに しっぱいしました" });
+        return;
+      }
+      setApplyMessage({ taskId, ok: true, text: "しんせいしました！" });
       refetch();
     }
 
@@ -43,15 +55,21 @@ export default function JobsPage() {
             (r) => r.task_id === task.id && r.status === "pending",
           );
           return (
-            <JobCard
-              key={task.id}
-              theme={theme}
-              status={pendingRequest ? "pending" : "apply"}
-              name={task.name}
-              reward={pendingRequest ? pendingRequest.reward_snapshot : task.reward}
-              condition={task.condition}
-              onApply={() => handleApply(task.id, task.reward)}
-            />
+            <div key={task.id}>
+              <JobCard
+                theme={theme}
+                status={pendingRequest ? "pending" : "apply"}
+                name={task.name}
+                reward={pendingRequest ? pendingRequest.reward_snapshot : task.reward}
+                condition={task.condition}
+                onApply={() => handleApply(task.id, task.reward)}
+              />
+              {applyMessage && applyMessage.taskId === task.id && (
+                <p style={{ fontSize: 12, marginTop: 4, color: applyMessage.ok ? "#3DB66E" : "#E26D62" }}>
+                  {applyMessage.text}
+                </p>
+              )}
+            </div>
           );
         })}
 

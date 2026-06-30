@@ -45,7 +45,7 @@ export default function ApprovalsPage() {
 
     return (
       <div className="flex flex-col gap-5 pt-2">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {(["all", ...CHILDREN] as const).map((key) => (
             <button
               key={key}
@@ -64,6 +64,21 @@ export default function ApprovalsPage() {
               {key === "all" ? "ぜんぶ" : THEME_LABELS[key].split("（")[0]}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => refetch()}
+            style={{
+              marginLeft: "auto",
+              fontSize: 12,
+              fontWeight: 700,
+              color: theme.accent,
+              border: `1px solid ${theme.accent}`,
+              borderRadius: 14,
+              padding: "6px 12px",
+            }}
+          >
+            更新
+          </button>
         </div>
 
         <section>

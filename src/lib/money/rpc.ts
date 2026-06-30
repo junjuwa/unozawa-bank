@@ -33,3 +33,8 @@ export async function spendMoney(profileId: string, amount: number, memo?: strin
     p_memo: memo ?? null,
   });
 }
+
+export async function paySalaryNow(profileId: string) {
+  const supabase = createClient();
+  return supabase.rpc("pay_salary_now", { p_profile_id: profileId });
+}

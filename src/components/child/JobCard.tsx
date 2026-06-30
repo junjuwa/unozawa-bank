@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ChildTheme } from "@/lib/theme/childTheme";
 import { JobStatus, STATUS_COLORS } from "@/lib/theme/statusColors";
 import { ConditionPopup } from "@/components/child/ConditionPopup";
+import { ApprovedIcon, RejectedIcon, PendingIcon } from "@/components/child/statusIcons";
 
 export function JobCard({
   theme,
@@ -95,8 +96,14 @@ export function JobCard({
               fontWeight: 800,
               fontSize: 12,
               whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
             }}
           >
+            {jobStatus === "approved" && <ApprovedIcon size={14} />}
+            {jobStatus === "rejected" && <RejectedIcon size={14} />}
+            {jobStatus === "pending" && <PendingIcon size={14} />}
             {status.label}
           </span>
         )}

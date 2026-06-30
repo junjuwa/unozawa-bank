@@ -6,6 +6,9 @@ import { useMockSettings } from "@/lib/mock/MockSettingsContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useFamilySettings } from "@/hooks/useFamilySettings";
 import { useJobCatalogAdmin } from "@/hooks/useJobCatalogAdmin";
+import { useFamilyOverview } from "@/hooks/useFamilyOverview";
+import { paySalaryNow } from "@/lib/money/rpc";
+import { createClient } from "@/lib/supabase/client";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { SettingRow } from "@/components/parent/SettingRow";
 import { registerPasskey } from "@/lib/auth/passkey";
@@ -33,7 +36,27 @@ export default function SettingsPage() {
     updateJobTask,
     removeJobTask,
   } = useJobCatalogAdmin();
+  const { overview, refetch: refetchOverview } = useFamilyOverview();
   const isReal = familySettings !== null;
+
+  const [salaryMessage, setSalaryMessage] = useState<string | null>(null);
+
+  async function handlePayNow(profileId: string) {
+    setSalaryMessage(null);
+    const { error } = await paySalaryNow(profileId);
+    if (error) {
+      setSalaryMessage(`しっぱい: ${error.message}`);
+    } else {
+      setSalaryMessage("きほんきゅうを しきゅうしました！");
+      refetchOverview();
+    }
+  }
+
+  async function handleUpdateBaseSalary(profileId: string, value: number) {
+    const supabase = createClient();
+    await supabase.from("profiles").update({ base_salary: value }).eq("id", profileId);
+    refetchOverview();
+  }
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -94,30 +117,48 @@ export default function SettingsPage() {
         <p style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
           支給日：毎月1日（固定。design.md §1.6④/0002_monthly_salary.sql）
         </p>
+        {salaryMessage && (
+          <p style={{ fontSize: 12, color: salaryMessage.startsWith("しっぱい") ? "#E26D62" : "#3DB66E", marginBottom: 8 }}>
+            {salaryMessage}
+          </p>
+        )}
         {isReal ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <p style={{ fontSize: 11, color: theme.sub, flex: 1 }}>
-              家族共通の額です（design.md §1.3: family_settings.base_salaryは家族に1つ）
-            </p>
-            <input
-              type="number"
-              value={familySettings.base_salary}
-              onChange={(e) =>
-                updateFamilySettings({ base_salary: Math.max(0, Number(e.target.value)) })
-              }
-              style={{
-                width: 80,
-                textAlign: "right",
-                background: theme.frameBg,
-                color: theme.ink,
-                border: "1px solid #3A424C",
-                borderRadius: 8,
-                padding: "6px 8px",
-                fontSize: 13,
-              }}
-            />
-            <span style={{ fontSize: 12, color: theme.sub }}>円/月</span>
-          </div>
+          (overview ?? []).map((child) => (
+            <div key={child.profileId} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span style={{ flex: 1, fontSize: 13, color: theme.ink }}>{child.displayName}</span>
+              <input
+                type="number"
+                value={child.baseSalary}
+                onChange={(e) => handleUpdateBaseSalary(child.profileId, Math.max(0, Number(e.target.value)))}
+                style={{
+                  width: 80,
+                  textAlign: "right",
+                  background: theme.frameBg,
+                  color: theme.ink,
+                  border: "1px solid #3A424C",
+                  borderRadius: 8,
+                  padding: "6px 8px",
+                  fontSize: 13,
+                }}
+              />
+              <span style={{ fontSize: 12, color: theme.sub }}>円/月</span>
+              <button
+                type="button"
+                onClick={() => handlePayNow(child.profileId)}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: theme.accent,
+                  border: `1px solid ${theme.accent}`,
+                  borderRadius: 14,
+                  padding: "6px 10px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                今すぐ支給
+              </button>
+            </div>
+          ))
         ) : (
           CHILDREN.map((key) => (
             <div key={key} style={{ display: "flex", alignItems: "center", gap: 10 }}>

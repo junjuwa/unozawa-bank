@@ -16,6 +16,7 @@ import {
 } from "@/lib/goals/api";
 import { childThemes } from "@/lib/theme/childTheme";
 import { GoalCard } from "@/components/child/GoalCard";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 // 実ログイン済みのgoalsテーブルと、未ログイン時のMockGoalsContextを共通の表示型に揃える
 type DisplayGoal = { id: string; name: string; target: number; active: boolean; imageUrl?: string | null };
@@ -24,24 +25,24 @@ export default function GoalsPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
 
-  const { accounts } = useAccounts();
+  const { accounts, loading: accountsLoading } = useAccounts();
   const mockSave = useMockBalances().balances[themeKey].save;
   const save = accounts?.save ?? mockSave;
 
-  const { goals: realGoals, refetch: refetchGoals } = useGoals();
+  const { goals: realGoals, loading: goalsLoading, refetch: refetchGoals } = useGoals();
   const mock = useMockGoals();
   const mockGoals = mock.goals[themeKey];
 
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newTarget, setNewTarget] = useState(0);
+
+  if (accountsLoading || goalsLoading) return <LoadingScreen />;
   const isReal = realGoals !== null;
   const childGoals: DisplayGoal[] = isReal
     ? realGoals.map((g) => ({ id: g.id, name: g.name, target: g.target, active: g.active, imageUrl: g.image_url }))
     : mockGoals;
-
-  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newTarget, setNewTarget] = useState(0);
 
   async function handleAdd() {
     if (!newName.trim() || newTarget <= 0) return;

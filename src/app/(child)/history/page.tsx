@@ -4,13 +4,15 @@ import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useSpendHistory } from "@/hooks/useTransactions";
 import { childThemes } from "@/lib/theme/childTheme";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function HistoryPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
 
-  const { records: realRecords } = useSpendHistory();
+  const { records: realRecords, loading } = useSpendHistory();
   const mockRecords = useMockBalances().spendHistory[themeKey];
+  if (loading) return <LoadingScreen />;
   const records = realRecords
     ? realRecords.map((r) => ({ id: r.id, amount: r.amount, memo: r.memo ?? "", createdAt: r.created_at }))
     : mockRecords;

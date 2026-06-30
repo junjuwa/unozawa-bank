@@ -8,6 +8,9 @@ export type ChildOverview = {
   profileId: string;
   themeKey: ThemeKey;
   displayName: string;
+  baseSalary: number;
+  avatarUrl: string | null;
+  mascotUrl: string | null;
   boxes: { spend: number; save: number; grow: number };
   weeklyHistory: number[]; // [日,月,火,水,木,金,土]の今週「ためる」へ移動した額
   activeGoal: { name: string; target: number } | null;
@@ -44,7 +47,7 @@ export function useFamilyOverview() {
 
     const { data: children } = await supabase
       .from("profiles")
-      .select("id, display_name, theme_key")
+      .select("id, display_name, theme_key, base_salary, avatar_url, mascot_url")
       .eq("role", "child");
 
     if (!children || children.length === 0) {
@@ -103,6 +106,9 @@ export function useFamilyOverview() {
         profileId: child.id as string,
         themeKey: child.theme_key as ThemeKey,
         displayName: child.display_name as string,
+        baseSalary: (child as { base_salary?: number }).base_salary ?? 0,
+        avatarUrl: (child as { avatar_url?: string | null }).avatar_url ?? null,
+        mascotUrl: (child as { mascot_url?: string | null }).mascot_url ?? null,
         boxes,
         weeklyHistory,
         activeGoal: goal ? { name: goal.name, target: goal.target } : null,
