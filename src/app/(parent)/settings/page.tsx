@@ -7,7 +7,7 @@ import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useFamilySettings } from "@/hooks/useFamilySettings";
 import { useJobCatalogAdmin } from "@/hooks/useJobCatalogAdmin";
 import { useFamilyOverview } from "@/hooks/useFamilyOverview";
-import { paySalaryNow } from "@/lib/money/rpc";
+import { paySalaryNow, payCustomAmount } from "@/lib/money/rpc";
 import { createClient } from "@/lib/supabase/client";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { SettingRow } from "@/components/parent/SettingRow";
@@ -40,6 +40,9 @@ export default function SettingsPage() {
   const isReal = familySettings !== null;
 
   const [salaryMessage, setSalaryMessage] = useState<string | null>(null);
+  const [customPayTarget, setCustomPayTarget] = useState<string>("");
+  const [customPayAmount, setCustomPayAmount] = useState<number>(0);
+  const [customPayMessage, setCustomPayMessage] = useState<string | null>(null);
 
   async function handlePayNow(profileId: string) {
     setSalaryMessage(null);
@@ -48,6 +51,22 @@ export default function SettingsPage() {
       setSalaryMessage(`しっぱい: ${error.message}`);
     } else {
       setSalaryMessage("きほんきゅうを しきゅうしました！");
+      refetchOverview();
+    }
+  }
+
+  async function handleCustomPay() {
+    setCustomPayMessage(null);
+    if (!customPayTarget || customPayAmount <= 0) {
+      setCustomPayMessage("たいしょうと きんがくを にゅうりょくしてください");
+      return;
+    }
+    const { error } = await payCustomAmount(customPayTarget, customPayAmount);
+    if (error) {
+      setCustomPayMessage(`しっぱい: ${error.message}`);
+    } else {
+      setCustomPayMessage("しきゅうしました！");
+      setCustomPayAmount(0);
       refetchOverview();
     }
   }
@@ -205,6 +224,65 @@ export default function SettingsPage() {
             </div>
           ))
         )}
+      </section>
+
+      {/* 今すぐ支給セクション（実モード・モック共通。実モードはpay_custom_amount RPC、モックはcreditReward） */}
+      <section
+        style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}
+      >
+        <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>てあてを おくる</h2>
+        <p style={{ fontSize: 11, color: theme.sub, marginBottom: 10 }}>
+          たいしょうと きんがくを えらんで すぐに「つかう」へ いれます
+        </p>
+        {customPayMessage && (
+          <p style={{ fontSize: 12, color: customPayMessage.startsWith("しっぱい") ? "#E26D62" : "#3DB66E", marginBottom: 8, fontWeight: 700 }}>
+            {customPayMessage}
+          </p>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <select
+            value={isReal ? customPayTarget : ""}
+            onChange={(e) => setCustomPayTarget(e.target.value)}
+            style={{ background: theme.frameBg, color: theme.ink, border: "1px solid #3A424C", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}
+          >
+            <option value="">たいしょうを えらぶ</option>
+            {isReal
+              ? (overview ?? []).map((child) => (
+                  <option key={child.profileId} value={child.profileId}>{child.displayName}</option>
+                ))
+              : (["rei_blue", "jun_red"] as const).map((key) => (
+                  <option key={key} value={key}>{THEME_LABELS[key].split("（")[0]}</option>
+                ))}
+          </select>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="number"
+              placeholder="きんがく（えん）"
+              value={customPayAmount || ""}
+              onChange={(e) => setCustomPayAmount(Math.max(0, Number(e.target.value)))}
+              style={{ flex: 1, background: theme.frameBg, color: theme.ink, border: "1px solid #3A424C", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}
+            />
+            <span style={{ fontSize: 12, color: theme.sub }}>えん</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (isReal) {
+                  handleCustomPay();
+                } else {
+                  if (!customPayTarget || customPayAmount <= 0) return;
+                  if (customPayTarget === "rei_blue" || customPayTarget === "jun_red") {
+                    creditReward(customPayTarget, customPayAmount);
+                    setCustomPayMessage("（モック）しきゅうしました！");
+                    setCustomPayAmount(0);
+                  }
+                }
+              }}
+              style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: theme.accent, borderRadius: 14, padding: "8px 14px", whiteSpace: "nowrap" }}
+            >
+              今すぐ支給
+            </button>
+          </div>
+        </div>
       </section>
 
       <section

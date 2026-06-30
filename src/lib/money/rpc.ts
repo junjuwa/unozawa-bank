@@ -38,3 +38,8 @@ export async function paySalaryNow(profileId: string) {
   const supabase = createClient();
   return supabase.rpc("pay_salary_now", { p_profile_id: profileId });
 }
+
+export async function payCustomAmount(profileId: string, amount: number) {
+  const supabase = createClient();
+  return supabase.rpc("pay_custom_amount", { p_profile_id: profileId, p_amount: amount });
+}

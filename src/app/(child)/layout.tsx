@@ -11,6 +11,7 @@ import { THEME_LABELS } from "@/lib/theme/themes";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
 import { useProfile } from "@/hooks/useProfile";
+import { useAccounts } from "@/hooks/useAccounts";
 import { FrameDecoration } from "@/components/child/FrameDecoration";
 
 export default function ChildLayout({
@@ -25,7 +26,13 @@ export default function ChildLayout({
     profile && (profile as { theme_key?: string }).theme_key === themeKey
       ? (profile.display_name as string)
       : THEME_LABELS[themeKey].split("（")[0];
-  const balances = useMockBalances().balances[themeKey];
+  const { accounts } = useAccounts();
+  const mockBalances = useMockBalances().balances[themeKey];
+  // 実ログイン済みかつtheme_keyが一致すれば実残高、そうでなければモック残高
+  const balances =
+    accounts && (profile as { theme_key?: string } | null)?.theme_key === themeKey
+      ? accounts
+      : mockBalances;
   const total = balances.spend + balances.save + balances.grow;
   const mockAvatarUrl = useMockAvatars().avatars[themeKey];
   // 実ログイン済みかつtheme_keyが一致すればDBのavatar_urlを優先、それ以外はモックにフォールバック

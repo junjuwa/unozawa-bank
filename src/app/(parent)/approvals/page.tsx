@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockJobs } from "@/lib/mock/MockJobsContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
@@ -9,6 +9,7 @@ import { useFamilyJobRequests } from "@/hooks/useJobRequests";
 import { approveJobRequest, rejectJobRequest } from "@/lib/money/rpc";
 import { THEME_LABELS, ThemeKey } from "@/lib/theme/themes";
 import { ApprovalCard } from "@/components/parent/ApprovalCard";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const CHILDREN: ThemeKey[] = ["rei_blue", "jun_red"];
 
@@ -17,8 +18,16 @@ export default function ApprovalsPage() {
   const { jobs, decideJob } = useMockJobs();
   const { creditReward } = useMockBalances();
   const { settings } = useMockSettings();
-  const { requests, refetch } = useFamilyJobRequests();
+  const { requests, loading: requestsLoading, refetch } = useFamilyJobRequests();
   const [filter, setFilter] = useState<"all" | ThemeKey>("all");
+
+  // 30秒ごとに自動更新（子が申請後に親が更新ボタンを押さなくても反映される）
+  useEffect(() => {
+    const id = setInterval(() => { refetch(); }, 30_000);
+    return () => clearInterval(id);
+  }, [refetch]);
+
+  if (requestsLoading) return <LoadingScreen />;
 
   function catalogName(catalogId: string) {
     return settings.jobCatalog.find((c) => c.id === catalogId)?.name ?? catalogId;

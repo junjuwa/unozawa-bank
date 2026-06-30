@@ -2,27 +2,30 @@ export function LoadingScreen() {
   return (
     <div
       style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: 200,
-        gap: 12,
+        background: "rgba(255,255,255,0.85)",
+        backdropFilter: "blur(4px)",
+        gap: 16,
       }}
     >
       <div
         style={{
-          width: 36,
-          height: 36,
-          border: "4px solid rgba(0,0,0,0.08)",
-          borderTopColor: "currentColor",
+          width: 44,
+          height: 44,
+          border: "5px solid rgba(0,0,0,0.1)",
+          borderTopColor: "#4A9EFF",
           borderRadius: "50%",
-          animation: "spin 0.8s linear infinite",
-          opacity: 0.5,
+          animation: "loading-spin 0.8s linear infinite",
         }}
       />
-      <p style={{ fontSize: 13, fontWeight: 700, opacity: 0.5 }}>よみこみちゅう…</p>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <p style={{ fontSize: 15, fontWeight: 800, color: "#4A9EFF" }}>よみこみちゅう…</p>
+      <style>{`@keyframes loading-spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
