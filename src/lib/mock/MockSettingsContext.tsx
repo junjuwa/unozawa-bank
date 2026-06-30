@@ -29,6 +29,7 @@ type MockSettingsContextValue = {
   setJobReward: (jobId: string, value: number) => void;
   setJobCondition: (jobId: string, value: string) => void;
   addJob: (name: string, reward: number, condition: string) => void;
+  removeJob: (jobId: string) => void;
 };
 
 const MockSettingsContext = createContext<MockSettingsContextValue | null>(null);
@@ -66,6 +67,12 @@ export function MockSettingsProvider({ children }: { children: React.ReactNode }
       ],
     }));
   }
+  function removeJob(jobId: string) {
+    setSettings((prev) => ({
+      ...prev,
+      jobCatalog: prev.jobCatalog.filter((job) => job.id !== jobId),
+    }));
+  }
 
   return (
     <MockSettingsContext.Provider
@@ -77,6 +84,7 @@ export function MockSettingsProvider({ children }: { children: React.ReactNode }
         setJobReward,
         setJobCondition,
         addJob,
+        removeJob,
       }}
     >
       {children}

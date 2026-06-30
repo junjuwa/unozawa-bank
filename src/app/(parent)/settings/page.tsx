@@ -19,6 +19,7 @@ export default function SettingsPage() {
     setJobReward,
     setJobCondition,
     addJob,
+    removeJob,
   } = useMockSettings();
   const { creditReward } = useMockBalances();
 
@@ -135,14 +136,36 @@ export default function SettingsPage() {
         </p>
         {settings.jobCatalog.map((job) => (
           <div key={job.id} style={{ borderBottom: "1px solid #3A424C", padding: "12px 0" }}>
-            <SettingRow
-              theme={theme}
-              label={job.name}
-              value={job.reward}
-              unit="円"
-              onIncrement={() => setJobReward(job.id, job.reward + 10)}
-              onDecrement={() => setJobReward(job.id, Math.max(0, job.reward - 10))}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <SettingRow
+                  theme={theme}
+                  label={job.name}
+                  value={job.reward}
+                  unit="円"
+                  onIncrement={() => setJobReward(job.id, job.reward + 10)}
+                  onDecrement={() => setJobReward(job.id, Math.max(0, job.reward - 10))}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`「${job.name}」を削除しますか？`)) removeJob(job.id);
+                }}
+                aria-label={`${job.name}を削除`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#E26D62",
+                  border: "1px solid #E26D62",
+                  borderRadius: 14,
+                  padding: "6px 10px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                削除
+              </button>
+            </div>
             <label style={{ display: "block", fontSize: 11, color: theme.sub, marginTop: 6 }}>
               完了条件
               <input
