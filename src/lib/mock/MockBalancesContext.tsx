@@ -16,6 +16,8 @@ type TransferResult = { ok: true } | { ok: false; error: string };
 // 永続化は行わない。本実装ではtransactionsテーブルからの集計に置き換える。
 type WeeklyHistory = number[];
 
+export type SpendRecord = { id: string; amount: number; memo: string; createdAt: string };
+
 const INITIAL_BALANCES: Record<ThemeKey, Balances> = {
   rei_blue: { spend: 1200, save: 5400, grow: 3000 },
   jun_red: { spend: 800, save: 2100, grow: 0 },
@@ -28,9 +30,18 @@ const INITIAL_WEEKLY_HISTORY: Record<ThemeKey, WeeklyHistory> = {
   parent_dark: [0, 0, 0, 0, 0, 0, 0],
 };
 
+const INITIAL_SPEND_HISTORY: Record<ThemeKey, SpendRecord[]> = {
+  rei_blue: [],
+  jun_red: [],
+  parent_dark: [],
+};
+
+type SpendResult = { ok: true } | { ok: false; error: string };
+
 type MockBalancesContextValue = {
   balances: Record<ThemeKey, Balances>;
   weeklyHistory: Record<ThemeKey, WeeklyHistory>;
+  spendHistory: Record<ThemeKey, SpendRecord[]>;
   mockTransfer: (
     theme: ThemeKey,
     from: AccountKind,
@@ -38,6 +49,7 @@ type MockBalancesContextValue = {
     amount: number,
   ) => TransferResult;
   creditReward: (theme: ThemeKey, amount: number) => void;
+  spendMoney: (theme: ThemeKey, amount: number, memo: string) => SpendResult;
 };
 
 const MockBalancesContext = createContext<MockBalancesContextValue | null>(
@@ -53,6 +65,8 @@ export function MockBalancesProvider({
     useState<Record<ThemeKey, Balances>>(INITIAL_BALANCES);
   const [weeklyHistory, setWeeklyHistory] =
     useState<Record<ThemeKey, WeeklyHistory>>(INITIAL_WEEKLY_HISTORY);
+  const [spendHistory, setSpendHistory] =
+    useState<Record<ThemeKey, SpendRecord[]>>(INITIAL_SPEND_HISTORY);
 
   function mockTransfer(
     theme: ThemeKey,
@@ -98,9 +112,30 @@ export function MockBalancesProvider({
     }));
   }
 
+  // design.md §1.6: 支出はすべて親が記録する（子に支出ボタンは置かない）
+  function spendMoney(theme: ThemeKey, amount: number, memo: string): SpendResult {
+    if (amount <= 0) return { ok: false, error: "きんがくを いれてください" };
+    if (balances[theme].spend < amount) {
+      return { ok: false, error: "つかうの ざんだかが たりません" };
+    }
+
+    setBalances((prev) => ({
+      ...prev,
+      [theme]: { ...prev[theme], spend: prev[theme].spend - amount },
+    }));
+    setSpendHistory((prev) => ({
+      ...prev,
+      [theme]: [
+        { id: crypto.randomUUID(), amount, memo, createdAt: new Date().toISOString() },
+        ...prev[theme],
+      ],
+    }));
+    return { ok: true };
+  }
+
   return (
     <MockBalancesContext.Provider
-      value={{ balances, weeklyHistory, mockTransfer, creditReward }}
+      value={{ balances, weeklyHistory, spendHistory, mockTransfer, creditReward, spendMoney }}
     >
       {children}
     </MockBalancesContext.Provider>

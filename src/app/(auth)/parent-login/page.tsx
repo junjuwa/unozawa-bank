@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { childThemes } from "@/lib/theme/childTheme";
 import { createClient } from "@/lib/supabase/client";
+import { signInWithPasskey } from "@/lib/auth/passkey";
 
 export default function ParentLoginPage() {
   const router = useRouter();
@@ -29,6 +30,35 @@ export default function ParentLoginPage() {
       setError(signInError.message);
       return;
     }
+    router.push("/dashboard");
+  }
+
+  // /loginの子フローと同じ防御方針：認証後にrole==='parent'を確認し、
+  // 一致しなければサインアウトしてエラーにする
+  async function handlePasskeySignIn() {
+    setSubmitting(true);
+    setError(null);
+    const { data, error: signInError } = await signInWithPasskey();
+    if (signInError || !data?.user) {
+      setSubmitting(false);
+      setError(signInError?.message ?? "サインインできませんでした");
+      return;
+    }
+
+    const supabase = createClient();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+    setSubmitting(false);
+
+    if (profileError || !profile || profile.role !== "parent") {
+      await supabase.auth.signOut();
+      setError("おやのパスキーではありません");
+      return;
+    }
+
     router.push("/dashboard");
   }
 
@@ -120,6 +150,30 @@ export default function ParentLoginPage() {
           }}
         >
           {submitting ? "ログイン中…" : "ログイン"}
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0" }}>
+          <span style={{ flex: 1, height: 1, background: "#3A424C" }} />
+          <span style={{ fontSize: 11, color: theme.sub }}>または</span>
+          <span style={{ flex: 1, height: 1, background: "#3A424C" }} />
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePasskeySignIn}
+          disabled={submitting}
+          style={{
+            background: "transparent",
+            border: `1px solid ${theme.accent}`,
+            color: theme.accent,
+            borderRadius: 8,
+            padding: "10px 0",
+            fontWeight: 700,
+            fontSize: 14,
+            opacity: submitting ? 0.6 : 1,
+          }}
+        >
+          パスキーでログイン
         </button>
       </form>
     </main>

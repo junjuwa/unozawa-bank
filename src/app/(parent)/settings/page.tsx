@@ -6,6 +6,7 @@ import { useMockSettings } from "@/lib/mock/MockSettingsContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { SettingRow } from "@/components/parent/SettingRow";
+import { registerPasskey } from "@/lib/auth/passkey";
 
 const CHILDREN = ["rei_blue", "jun_red"] as const;
 
@@ -27,6 +28,19 @@ export default function SettingsPage() {
   const [newName, setNewName] = useState("");
   const [newReward, setNewReward] = useState(0);
   const [newCondition, setNewCondition] = useState("");
+  const [passkeyMessage, setPasskeyMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
+    null,
+  );
+
+  async function handleRegisterPasskey() {
+    setPasskeyMessage(null);
+    const { error } = await registerPasskey();
+    if (error) {
+      setPasskeyMessage({ kind: "error", text: error.message });
+      return;
+    }
+    setPasskeyMessage({ kind: "ok", text: "パスキーを登録しました" });
+  }
 
   const examplePrincipal = 500;
   const exampleInterest = Math.round(examplePrincipal * settings.investRate);
@@ -246,6 +260,41 @@ export default function SettingsPage() {
             ＋ おしごとを追加
           </button>
         )}
+      </section>
+
+      <section
+        style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}
+      >
+        <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>おやのパスキー</h2>
+        <p style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
+          この端末にパスキーを登録すると、次回から/parent-loginでパスキーログインできます
+        </p>
+        {passkeyMessage && (
+          <p
+            style={{
+              fontSize: 12,
+              color: passkeyMessage.kind === "error" ? "#E26D62" : "#3DB66E",
+              marginBottom: 8,
+            }}
+          >
+            {passkeyMessage.text}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={handleRegisterPasskey}
+          style={{
+            width: "100%",
+            background: theme.accent,
+            color: "#fff",
+            borderRadius: 8,
+            padding: "10px 0",
+            fontWeight: 700,
+            fontSize: 13,
+          }}
+        >
+          パスキーを登録する
+        </button>
       </section>
     </div>
   );

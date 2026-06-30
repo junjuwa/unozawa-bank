@@ -35,13 +35,15 @@ export default function HomePage() {
       {/* HANDOFF.md実例: つかう / ふやす row（同サイズ2カラム） */}
       <div className="flex gap-4">
         <div className="flex-1">
-          <BalanceCard
-            theme={theme}
-            kind="spend"
-            label="つかう"
-            icon={<span style={{ fontSize: 20 }}>👛</span>}
-            amount={balances.spend}
-          />
+          <Link href="/history">
+            <BalanceCard
+              theme={theme}
+              kind="spend"
+              label="つかう"
+              icon={<span style={{ fontSize: 20 }}>👛</span>}
+              amount={balances.spend}
+            />
+          </Link>
         </div>
         <div className="flex-1">
           <BalanceCard

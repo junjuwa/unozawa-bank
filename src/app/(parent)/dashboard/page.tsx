@@ -15,7 +15,7 @@ const CHILDREN = ["rei_blue", "jun_red"] as const;
 
 export default function DashboardPage() {
   const theme = childThemes.parent_dark;
-  const { balances, weeklyHistory } = useMockBalances();
+  const { balances, weeklyHistory, spendMoney } = useMockBalances();
   const { jobs } = useMockJobs();
   const { settings } = useMockSettings();
   const { avatars } = useMockAvatars();
@@ -91,6 +91,7 @@ export default function DashboardPage() {
               }
               weeklyHistory={weeklyHistory[key]}
               avatarUrl={avatars[key]}
+              onSpend={(amount, memo) => spendMoney(key, amount, memo)}
             />
           );
         })}

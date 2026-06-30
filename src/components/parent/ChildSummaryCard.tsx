@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ChildTheme } from "@/lib/theme/childTheme";
+import { SpendForm } from "@/components/parent/SpendForm";
 
 type Boxes = { spend: number; save: number; grow: number };
 
@@ -13,6 +15,7 @@ export function ChildSummaryCard({
   goalProgress,
   weeklyHistory,
   avatarUrl,
+  onSpend,
 }: {
   theme: ChildTheme;
   name: string;
@@ -22,8 +25,10 @@ export function ChildSummaryCard({
   goalProgress: number;
   weeklyHistory: number[];
   avatarUrl?: string | null;
+  onSpend: (amount: number, memo: string) => { ok: true } | { ok: false; error: string };
 }) {
   const fmt = (n: number) => new Intl.NumberFormat("ja-JP").format(n);
+  const [showSpendForm, setShowSpendForm] = useState(false);
 
   return (
     <div
@@ -102,6 +107,24 @@ export function ChildSummaryCard({
           );
         })}
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowSpendForm((v) => !v)}
+        style={{
+          marginTop: 10,
+          width: "100%",
+          fontSize: 12,
+          fontWeight: 700,
+          color: theme.accent,
+          border: `1px solid ${theme.accent}`,
+          borderRadius: 8,
+          padding: "6px 0",
+        }}
+      >
+        {showSpendForm ? "とじる" : "支出を記録"}
+      </button>
+      {showSpendForm && <SpendForm theme={theme} onSubmit={onSpend} />}
     </div>
   );
 }
