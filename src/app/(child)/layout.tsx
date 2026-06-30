@@ -6,7 +6,6 @@ import { useMockAvatars } from "@/lib/mock/MockAvatarsContext";
 import { ChildHeader } from "@/components/child/ChildHeader";
 import { BottomNav } from "@/components/child/BottomNav";
 import { SideNav } from "@/components/child/SideNav";
-import { ThemeToggleMock } from "@/components/ui/ThemeToggleMock";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
@@ -65,9 +64,7 @@ export default function ChildLayout({
       <FrameDecoration themeKey={themeKey} />
       {isSide && <SideNav theme={theme} />}
       <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
-        <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl}>
-          <ThemeToggleMock value={themeKey} onChange={setTheme} />
-        </ChildHeader>
+        <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl} />
         <main
           className={isSide ? "px-4" : "pb-28 px-4"}
           style={{ maxWidth: 720, margin: "0 auto" }}

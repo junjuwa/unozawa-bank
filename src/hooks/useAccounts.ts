@@ -5,18 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export type Accounts = { spend: number; save: number; grow: number };
 
-function rowsToAccounts(rows: { kind: string; balance: number }[]): Accounts {
-  const next: Accounts = { spend: 0, save: 0, grow: 0 };
-  for (const row of rows) {
-    if (row.kind === "spend" || row.kind === "save" || row.kind === "grow") {
-      next[row.kind] = row.balance;
-    }
-  }
-  return next;
-}
-
 // 実ログイン済みプロフィールのaccountsをkindごとにマッピングして返す。
-// Realtimeサブスクリプションで残高変更を即時反映する。
 // 未ログインならaccountsはnull（呼び出し側でモックにフォールバックする）。
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Accounts | null>(null);
@@ -42,33 +31,21 @@ export function useAccounts() {
       return;
     }
 
-    setAccounts(rowsToAccounts(rows as { kind: string; balance: number }[]));
+    const next: Accounts = { spend: 0, save: 0, grow: 0 };
+    for (const row of rows as { kind: string; balance: number }[]) {
+      if (row.kind === "spend" || row.kind === "save" || row.kind === "grow") {
+        next[row.kind] = row.balance;
+      }
+    }
+    setAccounts(next);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    const supabase = createClient();
-    let userId: string | null = null;
-
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { setLoading(false); return; }
-      userId = data.user.id;
-
-      // 初回フェッチ
-      refetch();
-
-      // Realtimeサブスクリプション: accountsテーブルの自分の行が変わったら即時更新
-      const channel = supabase
-        .channel("accounts-realtime")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "accounts", filter: `profile_id=eq.${userId}` },
-          () => { refetch(); },
-        )
-        .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
-    });
+    refetch();
+    // 30秒ごとに自動更新（支給後・振替後に親からの変更を反映）
+    const id = setInterval(() => { refetch(); }, 30_000);
+    return () => clearInterval(id);
   }, [refetch]);
 
   return { accounts, loading, refetch };
