@@ -1,21 +1,51 @@
 "use client";
 
-// TODO(auth): れい/じゅんのタイルはsignInWithPasskey()(src/lib/auth/passkey.ts)に置き換える。
-// 今はMockChildThemeContextのテーマ確定のみで「ログイン」を模している。
+// signInWithPasskey()はdiscoverable credential方式で事前にユーザーを特定しないため、
+// れい/じゅんどちらのタイルをタップしても同じ認証フローを呼ぶ。
+// 成功後に実プロフィールを取得し、テーマ・遷移先を決める。
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockAvatars } from "@/lib/mock/MockAvatarsContext";
 import { childThemes } from "@/lib/theme/childTheme";
+import { ThemeKey } from "@/lib/theme/themes";
 import { AuthTile } from "@/components/ui/AuthTile";
+import { createClient } from "@/lib/supabase/client";
+import { signInWithPasskey } from "@/lib/auth/passkey";
 
 export default function LoginPage() {
   const router = useRouter();
   const { setTheme } = useMockChildTheme();
   const { avatars } = useMockAvatars();
   const theme = childThemes.parent_dark;
+  const [error, setError] = useState<string | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
 
-  function handleSelectChild(key: "rei_blue" | "jun_red") {
-    setTheme(key);
+  async function handleSignInWithPasskey() {
+    setSigningIn(true);
+    setError(null);
+    const { data, error: signInError } = await signInWithPasskey();
+    if (signInError || !data?.user) {
+      setSigningIn(false);
+      setError(signInError?.message ?? "サインインできませんでした");
+      return;
+    }
+
+    const supabase = createClient();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, theme_key")
+      .eq("id", data.user.id)
+      .single();
+    setSigningIn(false);
+
+    if (profileError || !profile || profile.role !== "child") {
+      setError("子のプロフィールが見つかりませんでした");
+      return;
+    }
+
+    // 残高等のデータは引き続きモックのため、テーマだけ実プロフィールに同期する
+    setTheme(profile.theme_key as ThemeKey);
     router.push("/home");
   }
 
@@ -40,17 +70,19 @@ export default function LoginPage() {
           emoji="🌺"
           avatarUrl={avatars.rei_blue}
           label="れい"
-          onClick={() => handleSelectChild("rei_blue")}
+          onClick={handleSignInWithPasskey}
         />
         <AuthTile
           theme={childThemes.jun_red}
           emoji="🦸"
           avatarUrl={avatars.jun_red}
           label="じゅん"
-          onClick={() => handleSelectChild("jun_red")}
+          onClick={handleSignInWithPasskey}
         />
         <AuthTile theme={theme} emoji="👨" label="おとうさん" onClick={() => router.push("/parent-login")} />
       </div>
+      {signingIn && <p style={{ fontSize: 13, color: theme.sub }}>サインインちゅう…</p>}
+      {error && <p style={{ fontSize: 13, color: "#E26D62" }}>{error}</p>}
     </main>
   );
 }

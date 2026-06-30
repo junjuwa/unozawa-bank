@@ -10,14 +10,19 @@ import { ThemeToggleMock } from "@/components/ui/ThemeToggleMock";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function ChildLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const { theme: themeKey, setTheme } = useMockChildTheme();
   const theme = childThemes[themeKey];
-  // TODO(auth): name は useProfile().profile.display_name に置き換える
-  const name = THEME_LABELS[themeKey].split("（")[0];
+  const { profile } = useProfile();
+  // 実ログイン済みなら実プロフィールの表示名、未ログインならモック名にフォールバック
+  const name =
+    typeof profile?.display_name === "string"
+      ? profile.display_name
+      : THEME_LABELS[themeKey].split("（")[0];
   const balances = useMockBalances().balances[themeKey];
   const total = balances.spend + balances.save + balances.grow;
   const avatarUrl = useMockAvatars().avatars[themeKey];
