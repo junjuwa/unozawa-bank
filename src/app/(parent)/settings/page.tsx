@@ -45,8 +45,10 @@ export default function SettingsPage() {
 
   const [salaryMessage, setSalaryMessage] = useState<string | null>(null);
   // 基本給の編集はローカルstateで管理し、onBlurでDBに保存する
-  // （DBの値をそのままvalueにするとrefetchのたびに入力がリセットされる）
   const [salaryDraft, setSalaryDraft] = useState<Record<string, number | string>>({});
+  // 完了条件の編集はローカルstateで管理し、「反映」ボタンでDB保存する
+  const [conditionDraft, setConditionDraft] = useState<Record<string, string>>({});
+  const [conditionSaved, setConditionSaved] = useState<Record<string, boolean>>({});
   const [customPayTarget, setCustomPayTarget] = useState<string>("");
   const [customPayAmount, setCustomPayAmount] = useState<number>(0);
   const [customPayMessage, setCustomPayMessage] = useState<string | null>(null);
@@ -414,29 +416,49 @@ export default function SettingsPage() {
                 削除
               </button>
             </div>
-            <label style={{ display: "block", fontSize: 11, color: theme.sub, marginTop: 6 }}>
-              完了条件
-              <input
-                type="text"
-                value={job.condition}
-                onChange={(e) =>
-                  isReal
-                    ? updateJobTask(job.id, { condition: e.target.value })
-                    : setJobCondition(job.id, e.target.value)
-                }
-                style={{
-                  display: "block",
-                  width: "100%",
-                  marginTop: 4,
-                  background: theme.frameBg,
-                  color: theme.ink,
-                  border: "1px solid #3A424C",
-                  borderRadius: 8,
-                  padding: "6px 8px",
-                  fontSize: 12,
-                }}
-              />
-            </label>
+            <div style={{ marginTop: 6 }}>
+              <span style={{ fontSize: 11, color: theme.sub }}>完了条件</span>
+              <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center" }}>
+                <input
+                  type="text"
+                  value={conditionDraft[job.id] ?? job.condition}
+                  onChange={(e) => {
+                    setConditionDraft((d) => ({ ...d, [job.id]: e.target.value }));
+                    setConditionSaved((s) => ({ ...s, [job.id]: false }));
+                  }}
+                  style={{
+                    flex: 1,
+                    background: theme.frameBg,
+                    color: theme.ink,
+                    border: "1px solid #3A424C",
+                    borderRadius: 8,
+                    padding: "6px 8px",
+                    fontSize: 12,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const val = conditionDraft[job.id] ?? job.condition;
+                    if (isReal) updateJobTask(job.id, { condition: val });
+                    else setJobCondition(job.id, val);
+                    setConditionSaved((s) => ({ ...s, [job.id]: true }));
+                  }}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: conditionSaved[job.id] ? "#3DB66E" : theme.accent,
+                    border: `1px solid ${conditionSaved[job.id] ? "#3DB66E" : theme.accent}`,
+                    borderRadius: 10,
+                    padding: "6px 10px",
+                    whiteSpace: "nowrap",
+                    transition: "color 0.2s, border-color 0.2s",
+                  }}
+                >
+                  {conditionSaved[job.id] ? "反映済" : "反映"}
+                </button>
+              </div>
+            </div>
           </div>
         ))}
 
