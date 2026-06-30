@@ -128,6 +128,19 @@ create table public.family_settings (
   promises jsonb not null default '[]'::jsonb,   -- ぜったいのやくそく（ひらがな配列）
   updated_at timestamptz not null default now()
 );
+
+-- 目標（ほしいもの）。0005_goals.sqlで追加。お金は動かさないため
+-- 子が自分の行を直接insert/update/deleteできるRLSにする（RPC不要）。
+create table public.goals (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  target integer not null check (target > 0),
+  active boolean not null default false,           -- 1人につき常に高々1件がtrue（「いま ためてる」）
+  image_url text,
+  position integer not null default 0,             -- 並び順（子が↑↓で入れ替える）
+  created_at timestamptz not null default now()
+);
 ```
 
 ### 1.4 ヘルパー関数（RLS 再帰回避のため SECURITY DEFINER）

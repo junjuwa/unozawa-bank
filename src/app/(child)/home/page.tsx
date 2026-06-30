@@ -7,6 +7,7 @@ import { childThemes } from "@/lib/theme/childTheme";
 import { useMockGoals } from "@/lib/mock/MockGoalsContext";
 import { useMockMascot } from "@/lib/mock/MockMascotContext";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useGoals } from "@/hooks/useGoals";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
 import { BoxIcon } from "@/components/child/boxIcons";
@@ -18,8 +19,14 @@ export default function HomePage() {
   const { accounts } = useAccounts();
   const mockBalances = useMockBalances().balances[themeKey];
   const balances = accounts ?? mockBalances;
-  const childGoals = useMockGoals().goals[themeKey];
+
+  const { goals: realGoals } = useGoals();
+  const mockGoals = useMockGoals().goals[themeKey];
+  const childGoals = realGoals ?? mockGoals;
   const activeGoal = childGoals.find((g) => g.active);
+  const activeGoalImageUrl = activeGoal
+    ? ("image_url" in activeGoal ? activeGoal.image_url ?? undefined : activeGoal.imageUrl)
+    : undefined;
   const otherCount = childGoals.length - (activeGoal ? 1 : 0);
   const mascotImageUrl = useMockMascot().mascots[themeKey];
 
@@ -48,7 +55,7 @@ export default function HomePage() {
                   current: balances.save,
                   target: activeGoal.target,
                   otherCount,
-                  imageUrl: activeGoal.imageUrl,
+                  imageUrl: activeGoalImageUrl,
                 }
               : undefined
           }

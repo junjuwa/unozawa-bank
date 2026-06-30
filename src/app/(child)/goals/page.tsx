@@ -4,34 +4,103 @@ import { useRef, useState } from "react";
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useMockGoals } from "@/lib/mock/MockGoalsContext";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useGoals } from "@/hooks/useGoals";
+import { createClient } from "@/lib/supabase/client";
+import {
+  addGoal as addGoalApi,
+  removeGoal as removeGoalApi,
+  activateGoal,
+  swapGoalPositions,
+  setGoalImage as setGoalImageApi,
+} from "@/lib/goals/api";
 import { childThemes } from "@/lib/theme/childTheme";
 import { GoalCard } from "@/components/child/GoalCard";
+
+// 実ログイン済みのgoalsテーブルと、未ログイン時のMockGoalsContextを共通の表示型に揃える
+type DisplayGoal = { id: string; name: string; target: number; active: boolean; imageUrl?: string | null };
 
 export default function GoalsPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
-  const save = useMockBalances().balances[themeKey].save;
-  const { goals, addGoal, removeGoal, moveGoal, setGoalImage } = useMockGoals();
-  const childGoals = goals[themeKey];
+
+  const { accounts } = useAccounts();
+  const mockSave = useMockBalances().balances[themeKey].save;
+  const save = accounts?.save ?? mockSave;
+
+  const { goals: realGoals, refetch: refetchGoals } = useGoals();
+  const mock = useMockGoals();
+  const mockGoals = mock.goals[themeKey];
+
+  const isReal = realGoals !== null;
+  const childGoals: DisplayGoal[] = isReal
+    ? realGoals.map((g) => ({ id: g.id, name: g.name, target: g.target, active: g.active, imageUrl: g.image_url }))
+    : mockGoals;
+
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newTarget, setNewTarget] = useState(0);
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!newName.trim() || newTarget <= 0) return;
-    addGoal(themeKey, newName.trim(), newTarget);
+
+    if (isReal) {
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+      const hasActive = realGoals!.some((g) => g.active);
+      const nextPosition = realGoals!.length;
+      await addGoalApi(userData.user.id, newName.trim(), newTarget, hasActive, nextPosition);
+      refetchGoals();
+    } else {
+      mock.addGoal(themeKey, newName.trim(), newTarget);
+    }
+
     setNewName("");
     setNewTarget(0);
     setShowAddForm(false);
   }
 
+  async function handleRemove(goalId: string) {
+    if (isReal) {
+      const removed = realGoals!.find((g) => g.id === goalId);
+      await removeGoalApi(goalId);
+      const rest = realGoals!.filter((g) => g.id !== goalId);
+      if (removed?.active && rest.length > 0 && !rest.some((g) => g.active)) {
+        await activateGoal(rest[0].id);
+      }
+      refetchGoals();
+    } else {
+      mock.removeGoal(themeKey, goalId);
+    }
+  }
+
+  async function handleMove(goalId: string, direction: "up" | "down") {
+    if (isReal) {
+      const list = realGoals!;
+      const index = list.findIndex((g) => g.id === goalId);
+      const swapWith = direction === "up" ? index - 1 : index + 1;
+      if (index < 0 || swapWith < 0 || swapWith >= list.length) return;
+      await swapGoalPositions(list[index], list[swapWith]);
+      refetchGoals();
+    } else {
+      mock.moveGoal(themeKey, goalId, direction);
+    }
+  }
+
   function handleImageChange(goalId: string, file: File | null) {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") setGoalImage(themeKey, goalId, reader.result);
+    reader.onload = async () => {
+      if (typeof reader.result !== "string") return;
+      if (isReal) {
+        await setGoalImageApi(goalId, reader.result);
+        refetchGoals();
+      } else {
+        mock.setGoalImage(themeKey, goalId, reader.result);
+      }
     };
     reader.readAsDataURL(file);
   }
@@ -50,7 +119,7 @@ export default function GoalsPage() {
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => moveGoal(themeKey, goal.id, "up")}
+                onClick={() => handleMove(goal.id, "up")}
                 disabled={index === 0}
                 aria-label="上に動かす"
                 style={{
@@ -67,7 +136,7 @@ export default function GoalsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => moveGoal(themeKey, goal.id, "down")}
+                onClick={() => handleMove(goal.id, "down")}
                 disabled={index === childGoals.length - 1}
                 aria-label="下に動かす"
                 style={{
@@ -85,7 +154,7 @@ export default function GoalsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm(`「${goal.name}」を削除しますか？`)) removeGoal(themeKey, goal.id);
+                  if (confirm(`「${goal.name}」を削除しますか？`)) handleRemove(goal.id);
                 }}
                 aria-label="削除"
                 style={{

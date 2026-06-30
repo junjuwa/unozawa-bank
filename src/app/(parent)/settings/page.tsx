@@ -4,6 +4,8 @@ import { useState } from "react";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockSettings } from "@/lib/mock/MockSettingsContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
+import { useFamilySettings } from "@/hooks/useFamilySettings";
+import { useJobCatalogAdmin } from "@/hooks/useJobCatalogAdmin";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { SettingRow } from "@/components/parent/SettingRow";
 import { registerPasskey } from "@/lib/auth/passkey";
@@ -13,7 +15,7 @@ const CHILDREN = ["rei_blue", "jun_red"] as const;
 export default function SettingsPage() {
   const theme = childThemes.parent_dark;
   const {
-    settings,
+    settings: mockSettings,
     setBasePay,
     setInvestRate,
     setInvestTermDays,
@@ -24,10 +26,20 @@ export default function SettingsPage() {
   } = useMockSettings();
   const { creditReward } = useMockBalances();
 
+  const { settings: familySettings, updateFamilySettings } = useFamilySettings();
+  const {
+    catalog: realCatalog,
+    addJobTask,
+    updateJobTask,
+    removeJobTask,
+  } = useJobCatalogAdmin();
+  const isReal = familySettings !== null;
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newReward, setNewReward] = useState(0);
   const [newCondition, setNewCondition] = useState("");
+  const [newPromise, setNewPromise] = useState("");
   const [passkeyMessage, setPasskeyMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
@@ -42,16 +54,35 @@ export default function SettingsPage() {
     setPasskeyMessage({ kind: "ok", text: "パスキーを登録しました" });
   }
 
+  const investRate = isReal ? familySettings.investment_rate : mockSettings.investRate;
+  const investTermDays = isReal ? familySettings.maturity_days : mockSettings.investTermDays;
   const examplePrincipal = 500;
-  const exampleInterest = Math.round(examplePrincipal * settings.investRate);
+  const exampleInterest = Math.round(examplePrincipal * investRate);
+
+  const jobCatalog = isReal ? realCatalog ?? [] : mockSettings.jobCatalog;
 
   function handleAddJob() {
     if (!newName.trim()) return;
-    addJob(newName.trim(), newReward, newCondition.trim());
+    if (isReal) {
+      addJobTask(newName.trim(), newReward, newCondition.trim());
+    } else {
+      addJob(newName.trim(), newReward, newCondition.trim());
+    }
     setNewName("");
     setNewReward(0);
     setNewCondition("");
     setShowAddForm(false);
+  }
+
+  function handleAddPromise() {
+    if (!isReal || !newPromise.trim()) return;
+    updateFamilySettings({ promises: [...familySettings.promises, newPromise.trim()] });
+    setNewPromise("");
+  }
+
+  function handleRemovePromise(index: number) {
+    if (!isReal) return;
+    updateFamilySettings({ promises: familySettings.promises.filter((_, i) => i !== index) });
   }
 
   return (
@@ -63,22 +94,17 @@ export default function SettingsPage() {
         <p style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
           支給日：毎月1日（固定。design.md §1.6④/0002_monthly_salary.sql）
         </p>
-        {CHILDREN.map((key) => (
-          <div key={key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <SettingRow
-                theme={theme}
-                label={THEME_LABELS[key].split("（")[0]}
-                value={settings.basePay[key]}
-                unit="円/月"
-                onIncrement={() => setBasePay(key, settings.basePay[key] + 50)}
-                onDecrement={() => setBasePay(key, Math.max(0, settings.basePay[key] - 50))}
-              />
-            </div>
+        {isReal ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <p style={{ fontSize: 11, color: theme.sub, flex: 1 }}>
+              家族共通の額です（design.md §1.3: family_settings.base_salaryは家族に1つ）
+            </p>
             <input
               type="number"
-              value={settings.basePay[key]}
-              onChange={(e) => setBasePay(key, Math.max(0, Number(e.target.value)))}
+              value={familySettings.base_salary}
+              onChange={(e) =>
+                updateFamilySettings({ base_salary: Math.max(0, Number(e.target.value)) })
+              }
               style={{
                 width: 80,
                 textAlign: "right",
@@ -90,23 +116,54 @@ export default function SettingsPage() {
                 fontSize: 13,
               }}
             />
-            <button
-              type="button"
-              onClick={() => creditReward(key, settings.basePay[key])}
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: theme.accent,
-                border: `1px solid ${theme.accent}`,
-                borderRadius: 14,
-                padding: "6px 10px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              今すぐ支給（テスト）
-            </button>
+            <span style={{ fontSize: 12, color: theme.sub }}>円/月</span>
           </div>
-        ))}
+        ) : (
+          CHILDREN.map((key) => (
+            <div key={key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <SettingRow
+                  theme={theme}
+                  label={THEME_LABELS[key].split("（")[0]}
+                  value={mockSettings.basePay[key]}
+                  unit="円/月"
+                  onIncrement={() => setBasePay(key, mockSettings.basePay[key] + 50)}
+                  onDecrement={() => setBasePay(key, Math.max(0, mockSettings.basePay[key] - 50))}
+                />
+              </div>
+              <input
+                type="number"
+                value={mockSettings.basePay[key]}
+                onChange={(e) => setBasePay(key, Math.max(0, Number(e.target.value)))}
+                style={{
+                  width: 80,
+                  textAlign: "right",
+                  background: theme.frameBg,
+                  color: theme.ink,
+                  border: "1px solid #3A424C",
+                  borderRadius: 8,
+                  padding: "6px 8px",
+                  fontSize: 13,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => creditReward(key, mockSettings.basePay[key])}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: theme.accent,
+                  border: `1px solid ${theme.accent}`,
+                  borderRadius: 14,
+                  padding: "6px 10px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                今すぐ支給（テスト）
+              </button>
+            </div>
+          ))
+        )}
       </section>
 
       <section
@@ -119,18 +176,34 @@ export default function SettingsPage() {
         <SettingRow
           theme={theme}
           label="利率（満期ごと）"
-          value={Math.round(settings.investRate * 100)}
+          value={Math.round(investRate * 100)}
           unit="%"
-          onIncrement={() => setInvestRate(Math.min(0.5, settings.investRate + 0.01))}
-          onDecrement={() => setInvestRate(Math.max(0, settings.investRate - 0.01))}
+          onIncrement={() =>
+            isReal
+              ? updateFamilySettings({ investment_rate: Math.min(0.5, investRate + 0.01) })
+              : setInvestRate(Math.min(0.5, investRate + 0.01))
+          }
+          onDecrement={() =>
+            isReal
+              ? updateFamilySettings({ investment_rate: Math.max(0, investRate - 0.01) })
+              : setInvestRate(Math.max(0, investRate - 0.01))
+          }
         />
         <SettingRow
           theme={theme}
           label="満期までの日数"
-          value={settings.investTermDays}
+          value={investTermDays}
           unit="日"
-          onIncrement={() => setInvestTermDays(settings.investTermDays + 1)}
-          onDecrement={() => setInvestTermDays(Math.max(1, settings.investTermDays - 1))}
+          onIncrement={() =>
+            isReal
+              ? updateFamilySettings({ maturity_days: investTermDays + 1 })
+              : setInvestTermDays(investTermDays + 1)
+          }
+          onDecrement={() =>
+            isReal
+              ? updateFamilySettings({ maturity_days: Math.max(1, investTermDays - 1) })
+              : setInvestTermDays(Math.max(1, investTermDays - 1))
+          }
         />
         <p style={{ fontSize: 12, color: theme.sub, marginTop: 10 }}>
           ¥{examplePrincipal} 運用 → 満期に{" "}
@@ -148,7 +221,7 @@ export default function SettingsPage() {
         <p style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
           承認時に「つかう」へ加算。すでに申請中／承認済みのおしごとには反映されません（申請時点の単価で固定）
         </p>
-        {settings.jobCatalog.map((job) => (
+        {jobCatalog.map((job) => (
           <div key={job.id} style={{ borderBottom: "1px solid #3A424C", padding: "12px 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ flex: 1 }}>
@@ -157,14 +230,25 @@ export default function SettingsPage() {
                   label={job.name}
                   value={job.reward}
                   unit="円"
-                  onIncrement={() => setJobReward(job.id, job.reward + 10)}
-                  onDecrement={() => setJobReward(job.id, Math.max(0, job.reward - 10))}
+                  onIncrement={() =>
+                    isReal
+                      ? updateJobTask(job.id, { reward: job.reward + 10 })
+                      : setJobReward(job.id, job.reward + 10)
+                  }
+                  onDecrement={() =>
+                    isReal
+                      ? updateJobTask(job.id, { reward: Math.max(0, job.reward - 10) })
+                      : setJobReward(job.id, Math.max(0, job.reward - 10))
+                  }
                 />
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm(`「${job.name}」を削除しますか？`)) removeJob(job.id);
+                  if (confirm(`「${job.name}」を削除しますか？`)) {
+                    if (isReal) removeJobTask(job.id);
+                    else removeJob(job.id);
+                  }
                 }}
                 aria-label={`${job.name}を削除`}
                 style={{
@@ -185,7 +269,11 @@ export default function SettingsPage() {
               <input
                 type="text"
                 value={job.condition}
-                onChange={(e) => setJobCondition(job.id, e.target.value)}
+                onChange={(e) =>
+                  isReal
+                    ? updateJobTask(job.id, { condition: e.target.value })
+                    : setJobCondition(job.id, e.target.value)
+                }
                 style={{
                   display: "block",
                   width: "100%",
@@ -261,6 +349,77 @@ export default function SettingsPage() {
           </button>
         )}
       </section>
+
+      {isReal && (
+        <section
+          style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}
+        >
+          <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>やくそく</h2>
+          <p style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
+            子供画面の「やくそく」に追加で表示されます（ひらがな推奨）
+          </p>
+          {familySettings.promises.map((promise, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 0",
+                borderBottom: "1px solid #3A424C",
+              }}
+            >
+              <span style={{ flex: 1, fontSize: 13, color: theme.ink }}>{promise}</span>
+              <button
+                type="button"
+                onClick={() => handleRemovePromise(i)}
+                aria-label="削除"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#E26D62",
+                  border: "1px solid #E26D62",
+                  borderRadius: 14,
+                  padding: "6px 10px",
+                }}
+              >
+                削除
+              </button>
+            </div>
+          ))}
+          <div className="flex gap-2" style={{ marginTop: 10 }}>
+            <input
+              type="text"
+              placeholder="あたらしい やくそく"
+              value={newPromise}
+              onChange={(e) => setNewPromise(e.target.value)}
+              style={{
+                flex: 1,
+                background: theme.frameBg,
+                color: theme.ink,
+                border: "1px solid #3A424C",
+                borderRadius: 8,
+                padding: "8px 10px",
+                fontSize: 13,
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleAddPromise}
+              style={{
+                background: theme.accent,
+                color: "#fff",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              追加
+            </button>
+          </div>
+        </section>
+      )}
 
       <section
         style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}

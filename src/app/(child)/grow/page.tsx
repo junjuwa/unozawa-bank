@@ -3,12 +3,14 @@
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { childThemes } from "@/lib/theme/childTheme";
 import { INVEST_LOTS } from "@/lib/mock/investLots";
+import { useInvestmentLots } from "@/hooks/useInvestmentLots";
 import { LotCard } from "@/components/child/LotCard";
 
 export default function GrowPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
-  const lots = INVEST_LOTS[themeKey];
+  const { lots: realLots } = useInvestmentLots();
+  const lots = realLots ?? INVEST_LOTS[themeKey];
 
   return (
     <div className="flex flex-col gap-4 pt-2">
