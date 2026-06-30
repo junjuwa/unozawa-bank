@@ -51,6 +51,7 @@ export function useMyJobRequests() {
 }
 
 // 親: 家族全員分のjob_requestsを取得（お仕事名・子の名前をjoin）。未ログインならnull。
+// RLSに頼らず、まず子供のprofile_idを取得してから明示的にinフィルタをかける。
 export function useFamilyJobRequests() {
   const [requests, setRequests] = useState<FamilyJobRequest[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,11 +65,26 @@ export function useFamilyJobRequests() {
       return;
     }
 
+    // 1. 自家族の子供profile_idを取得（profiles RLSで親は自家族のみ見える）
+    const { data: children } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("role", "child");
+
+    const childIds = (children ?? []).map((c: { id: string }) => c.id);
+    if (childIds.length === 0) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
+    // 2. 子供のprofile_idを明示フィルタしてjob_requestsを取得
     const { data } = await supabase
       .from("job_requests")
       .select(
         "id, task_id, reward_snapshot, status, requested_at, decided_at, job_tasks(name), profiles(display_name)",
       )
+      .in("profile_id", childIds)
       .order("requested_at", { ascending: false });
 
     setRequests((data as unknown as FamilyJobRequest[]) ?? []);

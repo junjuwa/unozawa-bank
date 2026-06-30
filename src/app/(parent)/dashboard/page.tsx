@@ -13,6 +13,7 @@ import { spendMoney } from "@/lib/money/rpc";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { KpiCard } from "@/components/parent/KpiCard";
 import { ChildSummaryCard } from "@/components/parent/ChildSummaryCard";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const CHILDREN = ["rei_blue", "jun_red"] as const;
 
@@ -24,9 +25,11 @@ export default function DashboardPage() {
   const { avatars } = useMockAvatars();
   const { goals } = useMockGoals();
 
-  const { overview, refetch: refetchOverview } = useFamilyOverview();
+  const { overview, loading: overviewLoading, refetch: refetchOverview } = useFamilyOverview();
   const { requests: familyRequests, refetch: refetchRequests } = useFamilyJobRequests();
   const isReal = overview !== null;
+
+  if (overviewLoading) return <LoadingScreen />;
 
   function catalogName(catalogId: string) {
     return settings.jobCatalog.find((c) => c.id === catalogId)?.name ?? catalogId;

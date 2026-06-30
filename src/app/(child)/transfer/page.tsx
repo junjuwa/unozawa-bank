@@ -11,6 +11,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { transferMoney } from "@/lib/money/rpc";
 import { BoxIcon } from "@/components/child/boxIcons";
 import { ConfirmPopup } from "@/components/child/ConfirmPopup";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 // transfer_money RPC(supabase/migrations/0001_init.sql)の例外メッセージを
 // モックと同じひらがなメッセージにマッピングする
@@ -142,7 +143,7 @@ export default function TransferPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const { balances, mockTransfer } = useMockBalances();
-  const { accounts, refetch } = useAccounts();
+  const { accounts, loading: accountsLoading, refetch } = useAccounts();
   // 実ログイン済みならaccountsテーブルの実残高、未ログインならモックにフォールバック
   const currentBalances = accounts ?? balances[themeKey];
 
@@ -154,6 +155,8 @@ export default function TransferPage() {
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
+
+  if (accountsLoading) return <LoadingScreen />;
 
   function handleSelectFrom(kind: AccountKind) {
     setFrom(kind);
@@ -281,7 +284,7 @@ export default function TransferPage() {
         }}
       >
         <h2 style={{ fontSize: 13, fontWeight: 800, color: theme.sub, marginBottom: 10, textAlign: "center" }}>
-          うつす かず
+          うごかす きんがく
         </h2>
         <div className="flex items-center justify-center" style={{ gap: 3 }}>
           {[1000, 100, 10].map((step) => (
@@ -331,6 +334,7 @@ export default function TransferPage() {
           fontWeight: 900,
           fontSize: 16,
           opacity: submitting ? 0.6 : 1,
+          marginBottom: 16,
         }}
       >
         {submitting ? "うごかしちゅう…" : "うごかす"}

@@ -58,9 +58,27 @@ function SettingsIcon() {
   );
 }
 
+function AvatarNavIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
   { href: "/dashboard", Icon: DashboardIcon, label: "ダッシュボード" },
   { href: "/approvals", Icon: ApproveIcon, label: "承認" },
+  { href: "/avatars", Icon: AvatarNavIcon, label: "アバター" },
   { href: "/settings", Icon: SettingsIcon, label: "設定" },
 ] as const;
 
@@ -77,7 +95,7 @@ export function ParentBottomNav({ theme }: { theme: ChildTheme }) {
         background: "#16191D",
         borderTop: "1px solid #3A424C",
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateColumns: "repeat(4, 1fr)",
         padding: "10px 6px 8px",
         fontFamily: theme.fontFamily,
       }}

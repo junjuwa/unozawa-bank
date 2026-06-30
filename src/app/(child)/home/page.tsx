@@ -7,6 +7,7 @@ import { childThemes } from "@/lib/theme/childTheme";
 import { useMockGoals } from "@/lib/mock/MockGoalsContext";
 import { useMockMascot } from "@/lib/mock/MockMascotContext";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useProfile } from "@/hooks/useProfile";
 import { useGoals } from "@/hooks/useGoals";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
@@ -29,7 +30,13 @@ export default function HomePage() {
     ? ("image_url" in activeGoal ? activeGoal.image_url ?? undefined : activeGoal.imageUrl)
     : undefined;
   const otherCount = childGoals.length - (activeGoal ? 1 : 0);
-  const mascotImageUrl = useMockMascot().mascots[themeKey];
+  const { profile } = useProfile();
+  const mockMascotUrl = useMockMascot().mascots[themeKey];
+  // 実ログイン済みかつtheme_keyが一致すれば実DBのmascot_urlを優先
+  const mascotImageUrl =
+    profile && (profile as { theme_key?: string; mascot_url?: string | null }).theme_key === themeKey
+      ? ((profile as { mascot_url?: string | null }).mascot_url ?? mockMascotUrl)
+      : mockMascotUrl;
 
   if (accountsLoading || goalsLoading) return <LoadingScreen />;
 

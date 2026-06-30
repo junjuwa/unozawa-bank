@@ -43,6 +43,9 @@ export function useAccounts() {
 
   useEffect(() => {
     refetch();
+    // 30秒ごとに残高を自動更新（支給後・振替後に親画面から変更があっても反映される）
+    const id = setInterval(() => { refetch(); }, 30_000);
+    return () => clearInterval(id);
   }, [refetch]);
 
   return { accounts, loading, refetch };
