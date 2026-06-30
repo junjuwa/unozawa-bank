@@ -44,11 +44,18 @@ export default function SettingsPage() {
   const isReal = familySettings !== null;
 
   const [salaryMessage, setSalaryMessage] = useState<string | null>(null);
-  // 基本給の編集はローカルstateで管理し、onBlurでDBに保存する
+  // 基本給: ローカルstate + onBlurでDB保存
   const [salaryDraft, setSalaryDraft] = useState<Record<string, number | string>>({});
-  // 完了条件の編集はローカルstateで管理し、「反映」ボタンでDB保存する
+  // 完了条件: ローカルstate + 反映ボタンでDB保存
   const [conditionDraft, setConditionDraft] = useState<Record<string, string>>({});
   const [conditionSaved, setConditionSaved] = useState<Record<string, boolean>>({});
+  // 単価: ローカルstate + 反映ボタンでDB保存（+/−連打ごとにRPCを走らせない）
+  const [rewardDraft, setRewardDraft] = useState<Record<string, number>>({});
+  const [rewardSaved, setRewardSaved] = useState<Record<string, boolean>>({});
+  // 投資設定: ローカルstate + 反映ボタンでDB保存
+  const [investRateDraft, setInvestRateDraft] = useState<number | null>(null);
+  const [maturityDaysDraft, setMaturityDaysDraft] = useState<number | null>(null);
+  const [investSaved, setInvestSaved] = useState(false);
   const [customPayTarget, setCustomPayTarget] = useState<string>("");
   const [customPayAmount, setCustomPayAmount] = useState<number>(0);
   const [customPayMessage, setCustomPayMessage] = useState<string | null>(null);
@@ -124,8 +131,9 @@ export default function SettingsPage() {
     setPasskeyMessage({ kind: "ok", text: "パスキーを登録しました" });
   }
 
-  const investRate = isReal ? familySettings.investment_rate : mockSettings.investRate;
-  const investTermDays = isReal ? familySettings.maturity_days : mockSettings.investTermDays;
+  // 投資設定はdraftがあればそちらを表示、なければDBの値
+  const investRate = investRateDraft ?? (isReal ? familySettings.investment_rate : mockSettings.investRate);
+  const investTermDays = maturityDaysDraft ?? (isReal ? familySettings.maturity_days : mockSettings.investTermDays);
   const examplePrincipal = 500;
   const exampleInterest = Math.round(examplePrincipal * investRate);
 
@@ -330,32 +338,16 @@ export default function SettingsPage() {
           label="利率（満期ごと）"
           value={Math.round(investRate * 100)}
           unit="%"
-          onIncrement={() =>
-            isReal
-              ? updateFamilySettings({ investment_rate: Math.min(0.5, investRate + 0.01) })
-              : setInvestRate(Math.min(0.5, investRate + 0.01))
-          }
-          onDecrement={() =>
-            isReal
-              ? updateFamilySettings({ investment_rate: Math.max(0, investRate - 0.01) })
-              : setInvestRate(Math.max(0, investRate - 0.01))
-          }
+          onIncrement={() => { setInvestRateDraft(Math.min(0.5, investRate + 0.01)); setInvestSaved(false); if (!isReal) setInvestRate(Math.min(0.5, investRate + 0.01)); }}
+          onDecrement={() => { setInvestRateDraft(Math.max(0, investRate - 0.01)); setInvestSaved(false); if (!isReal) setInvestRate(Math.max(0, investRate - 0.01)); }}
         />
         <SettingRow
           theme={theme}
           label="満期までの日数"
           value={investTermDays}
           unit="日"
-          onIncrement={() =>
-            isReal
-              ? updateFamilySettings({ maturity_days: investTermDays + 1 })
-              : setInvestTermDays(investTermDays + 1)
-          }
-          onDecrement={() =>
-            isReal
-              ? updateFamilySettings({ maturity_days: Math.max(1, investTermDays - 1) })
-              : setInvestTermDays(Math.max(1, investTermDays - 1))
-          }
+          onIncrement={() => { setMaturityDaysDraft(investTermDays + 1); setInvestSaved(false); if (!isReal) setInvestTermDays(investTermDays + 1); }}
+          onDecrement={() => { setMaturityDaysDraft(Math.max(1, investTermDays - 1)); setInvestSaved(false); if (!isReal) setInvestTermDays(Math.max(1, investTermDays - 1)); }}
         />
         <p style={{ fontSize: 12, color: theme.sub, marginTop: 10 }}>
           ¥{examplePrincipal} 運用 → 満期に{" "}
@@ -364,6 +356,30 @@ export default function SettingsPage() {
           </strong>{" "}
           (+¥{exampleInterest}) が「ためる」へ
         </p>
+        {isReal && (
+          <button
+            type="button"
+            onClick={() => {
+              updateFamilySettings({
+                investment_rate: investRate,
+                maturity_days: investTermDays,
+              });
+              setInvestSaved(true);
+            }}
+            style={{
+              marginTop: 10,
+              fontSize: 12,
+              fontWeight: 700,
+              color: investSaved ? "#3DB66E" : theme.accent,
+              border: `1px solid ${investSaved ? "#3DB66E" : theme.accent}`,
+              borderRadius: 12,
+              padding: "6px 16px",
+              transition: "color 0.2s, border-color 0.2s",
+            }}
+          >
+            {investSaved ? "反映済" : "反映"}
+          </button>
+        )}
       </section>
 
       <section
@@ -380,20 +396,43 @@ export default function SettingsPage() {
                 <SettingRow
                   theme={theme}
                   label={job.name}
-                  value={job.reward}
+                  value={rewardDraft[job.id] ?? job.reward}
                   unit="円"
-                  onIncrement={() =>
-                    isReal
-                      ? updateJobTask(job.id, { reward: job.reward + 10 })
-                      : setJobReward(job.id, job.reward + 10)
-                  }
-                  onDecrement={() =>
-                    isReal
-                      ? updateJobTask(job.id, { reward: Math.max(0, job.reward - 10) })
-                      : setJobReward(job.id, Math.max(0, job.reward - 10))
-                  }
+                  onIncrement={() => {
+                    const next = (rewardDraft[job.id] ?? job.reward) + 10;
+                    setRewardDraft((d) => ({ ...d, [job.id]: next }));
+                    setRewardSaved((s) => ({ ...s, [job.id]: false }));
+                    if (!isReal) setJobReward(job.id, next);
+                  }}
+                  onDecrement={() => {
+                    const next = Math.max(0, (rewardDraft[job.id] ?? job.reward) - 10);
+                    setRewardDraft((d) => ({ ...d, [job.id]: next }));
+                    setRewardSaved((s) => ({ ...s, [job.id]: false }));
+                    if (!isReal) setJobReward(job.id, next);
+                  }}
                 />
               </div>
+              {isReal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateJobTask(job.id, { reward: rewardDraft[job.id] ?? job.reward });
+                    setRewardSaved((s) => ({ ...s, [job.id]: true }));
+                  }}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: rewardSaved[job.id] ? "#3DB66E" : theme.accent,
+                    border: `1px solid ${rewardSaved[job.id] ? "#3DB66E" : theme.accent}`,
+                    borderRadius: 14,
+                    padding: "6px 10px",
+                    whiteSpace: "nowrap",
+                    transition: "color 0.2s, border-color 0.2s",
+                  }}
+                >
+                  {rewardSaved[job.id] ? "反映済" : "反映"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
