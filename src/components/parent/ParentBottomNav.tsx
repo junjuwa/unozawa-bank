@@ -4,31 +4,56 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChildTheme } from "@/lib/theme/childTheme";
 
-// TODO: Claude designで作成したアイコンに差し替える場所（src/components/child/navItems.tsxと同様の方針）。
+// Claude designで作成したアイコン（icons/dashboard.svg等）に差し替え済み。
 function DashboardIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
-      <rect x="3" y="3" width="8" height="8" rx="1" />
-      <rect x="13" y="3" width="8" height="5" rx="1" />
-      <rect x="13" y="11" width="8" height="10" rx="1" />
-      <rect x="3" y="13" width="8" height="8" rx="1" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" />
     </svg>
   );
 }
 
 function ApproveIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
-      <path d="M4 12l5 5L20 6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12 L11 15 L16.5 9" />
     </svg>
   );
 }
 
 function SettingsIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <path d="M12.2 3 h-.4 a1.8 1.8 0 0 0 -1.8 1.8 v.5 a1.8 1.8 0 0 1 -1.1 1.66 a1.8 1.8 0 0 1 -1.95 -.36 l-.36 -.36 a1.8 1.8 0 0 0 -2.54 0 l-.28 .28 a1.8 1.8 0 0 0 0 2.54 l.36 .36 a1.8 1.8 0 0 1 .36 1.95 a1.8 1.8 0 0 1 -1.66 1.1 h-.5 a1.8 1.8 0 0 0 -1.8 1.8 v.4 a1.8 1.8 0 0 0 1.8 1.8 h.5 a1.8 1.8 0 0 1 1.66 1.1 a1.8 1.8 0 0 1 -.36 1.95 l-.36 .36 a1.8 1.8 0 0 0 0 2.54 l.28 .28 a1.8 1.8 0 0 0 2.54 0 l.36 -.36 a1.8 1.8 0 0 1 1.95 -.36 a1.8 1.8 0 0 1 1.1 1.66 v.5 a1.8 1.8 0 0 0 1.8 1.8 h.4 a1.8 1.8 0 0 0 1.8 -1.8 v-.5 a1.8 1.8 0 0 1 1.1 -1.66 a1.8 1.8 0 0 1 1.95 .36 l.36 .36 a1.8 1.8 0 0 0 2.54 0 l.28 -.28 a1.8 1.8 0 0 0 0 -2.54 l-.36 -.36 a1.8 1.8 0 0 1 -.36 -1.95 a1.8 1.8 0 0 1 1.66 -1.1 h.5 a1.8 1.8 0 0 0 1.8 -1.8 v-.4 a1.8 1.8 0 0 0 -1.8 -1.8 h-.5 a1.8 1.8 0 0 1 -1.66 -1.1 a1.8 1.8 0 0 1 .36 -1.95 l.36 -.36 a1.8 1.8 0 0 0 0 -2.54 l-.28 -.28 a1.8 1.8 0 0 0 -2.54 0 l-.36 .36 a1.8 1.8 0 0 1 -1.95 .36 a1.8 1.8 0 0 1 -1.1 -1.66 v-.5 a1.8 1.8 0 0 0 -1.8 -1.8 Z" />
       <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 13a7.97 7.97 0 0 0 0-2l2-1.5-2-3.4-2.3.9a8 8 0 0 0-1.7-1l-.3-2.5h-4l-.3 2.5a8 8 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a8 8 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9a8 8 0 0 0 1.7 1l.3 2.5h4l.3-2.5a8 8 0 0 0 1.7-1l2.3.9 2-3.4z" />
     </svg>
   );
 }
