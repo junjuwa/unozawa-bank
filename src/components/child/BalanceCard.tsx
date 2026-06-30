@@ -1,19 +1,86 @@
 import { ChildTheme } from "@/lib/theme/childTheme";
 import { CoinRow } from "@/components/child/Coin";
 import { GoalCard } from "@/components/child/GoalCard";
+import { BOX_COLORS } from "@/lib/theme/boxColors";
+
+type BoxKind = keyof typeof BOX_COLORS;
 
 type BalanceCardProps = {
   theme: ChildTheme;
+  kind: BoxKind;
   label: string;
-  emoji: string;
+  icon: React.ReactNode;
   amount: number;
-  variant?: "default" | "grow";
-  // ためるカードのみ目標を内包表示する(HANDOFF.md §3-1のためる大カード相当)
+  // ためるカードのみ"featured"（アイコン+ラベル+金額を横一列のヘッダーにし、目標を内包する）。
+  // つかう/ふやすは"compact"（アイコン→ラベル→金額→コイン列の縦並び。HANDOFF.md実例の構造）。
+  layout?: "featured" | "compact";
   goal?: { name: string; current: number; target: number; otherCount: number };
 };
 
-export function BalanceCard({ theme, label, emoji, amount, variant = "default", goal }: BalanceCardProps) {
-  const progressFill = variant === "grow" ? theme.progressFillGrow : theme.progressFill;
+export function BalanceCard({
+  theme,
+  kind,
+  label,
+  icon,
+  amount,
+  layout = "compact",
+  goal,
+}: BalanceCardProps) {
+  const box = BOX_COLORS[kind];
+  const coinCount = Math.max(1, Math.min(6, Math.round(amount / 150)));
+
+  const iconBadge = (
+    <span
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        background: box.tint,
+        color: box.ink,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </span>
+  );
+
+  if (layout === "featured") {
+    return (
+      <div
+        style={{
+          background: theme.cardBg,
+          color: theme.ink,
+          borderRadius: theme.cardRadius,
+          boxShadow: theme.cardShadow,
+          border: theme.cardBorder,
+          padding: 16,
+          fontFamily: theme.fontFamily,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          {iconBadge}
+          <span style={{ fontWeight: 900, fontSize: 18 }}>{label}</span>
+          <span style={{ marginLeft: "auto", fontWeight: 900, fontSize: 22, color: theme.accentInk }}>
+            {new Intl.NumberFormat("ja-JP").format(amount)}
+            <span style={{ fontSize: 13 }}>えん</span>
+          </span>
+        </div>
+        {goal && goal.target > 0 && (
+          <>
+            <GoalCard theme={theme} name={goal.name} current={goal.current} target={goal.target} />
+            {goal.otherCount > 0 && (
+              <div style={{ fontSize: 12, color: theme.sub, textAlign: "right", marginTop: 4 }}>
+                ほかに {goal.otherCount}こ ＞
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -23,42 +90,36 @@ export function BalanceCard({ theme, label, emoji, amount, variant = "default", 
         borderRadius: theme.cardRadius,
         boxShadow: theme.cardShadow,
         border: theme.cardBorder,
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
+        padding: 15,
         fontFamily: theme.fontFamily,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 22 }}>{emoji}</span>
-          <span style={{ fontWeight: 800, fontSize: 16 }}>{label}</span>
-        </div>
-        <span style={{ fontWeight: 900, fontSize: 22, color: theme.accentInk }}>
-          {new Intl.NumberFormat("ja-JP").format(amount)}えん
-        </span>
+      <div style={{ marginBottom: 10 }}>{iconBadge}</div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontWeight: 900, fontSize: 17 }}>{label}</span>
+        {kind === "grow" && (
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              color: "#fff",
+              background: "#3DB66E",
+              borderRadius: 8,
+              padding: "2px 6px",
+            }}
+          >
+            ▲ふえる
+          </span>
+        )}
       </div>
 
-      {goal && goal.target > 0 ? (
-        <>
-          <GoalCard theme={theme} name={goal.name} current={goal.current} target={goal.target} />
-          {goal.otherCount > 0 && (
-            <div style={{ fontSize: 12, color: theme.sub, textAlign: "right" }}>
-              ほかに {goal.otherCount}こ ＞
-            </div>
-          )}
-        </>
-      ) : (
-        <CoinRow coin={theme.coin} count={Math.max(1, Math.min(6, Math.round(amount / 200)))} />
-      )}
+      <div style={{ fontWeight: 900, fontSize: 22, margin: "2px 0 8px" }}>
+        {new Intl.NumberFormat("ja-JP").format(amount)}
+        <span style={{ fontSize: 12 }}>えん</span>
+      </div>
 
-      {/* CSS変数は globals.css 側のフォールバック。テーマ別の質感差は progressFill 等で表現 */}
-      {variant === "grow" && (
-        <div style={{ height: 8, borderRadius: 4, background: theme.progressTrack, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: "40%", background: progressFill }} />
-        </div>
-      )}
+      <CoinRow coin={theme.coin} count={coinCount} size={18} />
     </div>
   );
 }

@@ -7,7 +7,6 @@ import {
   AccountKind,
   useMockBalances,
 } from "@/lib/mock/MockBalancesContext";
-import { CoinRow } from "@/components/child/Coin";
 
 const ACCOUNTS: { kind: AccountKind; label: string; emoji: string }[] = [
   { kind: "spend", label: "つかう", emoji: "👛" },
@@ -100,14 +99,17 @@ function AmountButton({
       type="button"
       onClick={onClick}
       style={{
-        minWidth: 52,
-        height: 40,
-        borderRadius: 20,
-        padding: "0 12px",
+        flex: 1,
+        minWidth: 0,
+        height: 36,
+        borderRadius: 18,
+        padding: "0 2px",
         background: tone === "plus" ? theme.accent : theme.progressTrack,
         color: tone === "plus" ? "#fff" : theme.ink,
         fontWeight: 900,
-        fontSize: 13,
+        fontSize: 11,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
       }}
     >
       {label}
@@ -229,7 +231,7 @@ export default function TransferPage() {
         <h2 style={{ fontSize: 13, fontWeight: 800, color: theme.sub, marginBottom: 10, textAlign: "center" }}>
           うつす かず
         </h2>
-        <div className="flex items-center justify-center gap-2 flex-wrap">
+        <div className="flex items-center justify-center" style={{ gap: 3 }}>
           {[1000, 100, 10].map((step) => (
             <AmountButton
               key={`plus-${step}`}
@@ -241,16 +243,15 @@ export default function TransferPage() {
           ))}
           <span
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
+              flexShrink: 0,
               fontWeight: 900,
-              fontSize: 22,
-              margin: "0 10px",
+              fontSize: 18,
+              margin: "0 6px",
+              whiteSpace: "nowrap",
             }}
           >
-            <CoinRow coin={theme.coin} count={1} size={18} />
-            {amount}えん
+            {amount}
+            <span style={{ fontSize: 10 }}>えん</span>
           </span>
           {[10, 100, 1000].map((step) => (
             <AmountButton

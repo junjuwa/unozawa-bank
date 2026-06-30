@@ -23,22 +23,35 @@ export default function HomePage() {
       <Link href="/goals">
         <BalanceCard
           theme={theme}
+          kind="save"
+          layout="featured"
           label="ためる"
-          emoji="🐷"
+          icon={<span style={{ fontSize: 20 }}>🐷</span>}
           amount={balances.save}
           goal={{ name: goal.name, current: balances.save, target: goal.target, otherCount: goal.otherCount }}
         />
       </Link>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: 16,
-        }}
-      >
-        <BalanceCard theme={theme} label="つかう" emoji="👛" amount={balances.spend} />
-        <BalanceCard theme={theme} label="ふやす" emoji="🌱" amount={balances.grow} variant="grow" />
+      {/* HANDOFF.md実例: つかう / ふやす row（同サイズ2カラム） */}
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <BalanceCard
+            theme={theme}
+            kind="spend"
+            label="つかう"
+            icon={<span style={{ fontSize: 20 }}>👛</span>}
+            amount={balances.spend}
+          />
+        </div>
+        <div className="flex-1">
+          <BalanceCard
+            theme={theme}
+            kind="grow"
+            label="ふやす"
+            icon={<span style={{ fontSize: 20 }}>🌱</span>}
+            amount={balances.grow}
+          />
+        </div>
       </div>
     </div>
   );
