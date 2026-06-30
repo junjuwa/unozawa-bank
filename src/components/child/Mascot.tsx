@@ -1,8 +1,20 @@
 // HANDOFF.md §3/§8: マスコット帯。案内・応援・祝福をひらがな短文で。
-// 本物のキャラ画像は将来差し替え（image-slot相当）。今は簡易な顔つき円で表現。
+// れい/じゅんはClaude designで作成したイラスト(mascotArt.ts)を使用。
 import { ChildTheme } from "@/lib/theme/childTheme";
+import { ThemeKey } from "@/lib/theme/themes";
+import { MASCOT_SVG } from "@/components/child/mascotArt";
 
-export function Mascot({ theme, message }: { theme: ChildTheme; message: string }) {
+export function Mascot({
+  theme,
+  themeKey,
+  message,
+}: {
+  theme: ChildTheme;
+  themeKey: ThemeKey;
+  message: string;
+}) {
+  const svg = themeKey === "rei_blue" || themeKey === "jun_red" ? MASCOT_SVG[themeKey] : null;
+
   return (
     <div
       style={{
@@ -12,12 +24,20 @@ export function Mascot({ theme, message }: { theme: ChildTheme; message: string 
         padding: "0 18px 10px",
       }}
     >
-      <svg viewBox="0 0 48 48" width={48} height={48} style={{ flexShrink: 0 }}>
-        <circle cx="24" cy="24" r="22" fill={theme.accent} stroke="#fff" strokeWidth={2} />
-        <circle cx="17" cy="20" r="3" fill="#fff" />
-        <circle cx="31" cy="20" r="3" fill="#fff" />
-        <path d="M15 29q9 8 18 0" stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round" />
-      </svg>
+      {svg ? (
+        <div
+          style={{ flexShrink: 0, width: 48, height: 56 }}
+          // 静的な信頼済みアセット(mascotArt.ts)のみを描画する。ユーザー入力は含まれない。
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      ) : (
+        <svg viewBox="0 0 48 48" width={48} height={48} style={{ flexShrink: 0 }}>
+          <circle cx="24" cy="24" r="22" fill={theme.accent} stroke="#fff" strokeWidth={2} />
+          <circle cx="17" cy="20" r="3" fill="#fff" />
+          <circle cx="31" cy="20" r="3" fill="#fff" />
+          <path d="M15 29q9 8 18 0" stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round" />
+        </svg>
+      )}
       <div
         style={{
           background: theme.cardBg,

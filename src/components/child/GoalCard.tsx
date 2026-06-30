@@ -3,6 +3,7 @@
 import { ChildTheme } from "@/lib/theme/childTheme";
 import { RubyText } from "@/components/child/RubyText";
 import { CoinRow } from "@/components/child/Coin";
+import { GiftIcon } from "@/components/child/placeholderIcons";
 
 export function GoalCard({
   theme,
@@ -50,7 +51,7 @@ export function GoalCard({
             // eslint-disable-next-line @next/next/no-img-element -- モックのdata URL表示のため
             <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            "ほしい もの"
+            <GiftIcon size={24} />
           )}
         </button>
         <div>

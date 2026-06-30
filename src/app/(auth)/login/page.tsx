@@ -79,19 +79,17 @@ export default function LoginPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 320 }}>
         <AuthTile
           theme={childThemes.rei_blue}
-          emoji="🌺"
           avatarUrl={avatars.rei_blue}
           label="れい"
           onClick={() => handleSignInWithPasskey("rei_blue")}
         />
         <AuthTile
           theme={childThemes.jun_red}
-          emoji="🦸"
           avatarUrl={avatars.jun_red}
           label="じゅん"
           onClick={() => handleSignInWithPasskey("jun_red")}
         />
-        <AuthTile theme={theme} emoji="👨" label="おとうさん" onClick={() => router.push("/parent-login")} />
+        <AuthTile theme={theme} label="おとうさん" onClick={() => router.push("/parent-login")} />
       </div>
       {signingIn && <p style={{ fontSize: 13, color: theme.sub }}>サインインちゅう…</p>}
       {error && <p style={{ fontSize: 13, color: "#E26D62" }}>{error}</p>}

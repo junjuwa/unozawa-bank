@@ -1,14 +1,13 @@
 import { ChildTheme } from "@/lib/theme/childTheme";
+import { AvatarIcon } from "@/components/child/placeholderIcons";
 
 export function AuthTile({
   theme,
-  emoji,
   avatarUrl,
   label,
   onClick,
 }: {
   theme: ChildTheme;
-  emoji: string;
   avatarUrl?: string | null;
   label: string;
   onClick: () => void;
@@ -46,7 +45,7 @@ export function AuthTile({
           <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </span>
       ) : (
-        <span style={{ fontSize: 40 }}>{emoji}</span>
+        <AvatarIcon size={40} />
       )}
       <span style={{ fontWeight: 900, fontSize: 18 }}>{label}</span>
     </button>

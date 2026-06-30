@@ -8,6 +8,7 @@ import { useMockGoals } from "@/lib/mock/MockGoalsContext";
 import { useAccounts } from "@/hooks/useAccounts";
 import { BalanceCard } from "@/components/child/BalanceCard";
 import { Mascot } from "@/components/child/Mascot";
+import { BoxIcon } from "@/components/child/boxIcons";
 
 export default function HomePage() {
   const { theme: themeKey } = useMockChildTheme();
@@ -22,7 +23,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <Mascot theme={theme} message="今日も おかねを ためよう！" />
+      <Mascot theme={theme} themeKey={themeKey} message="今日も おかねを ためよう！" />
 
       {/* HANDOFF.md §3: ためるカードはボトムナビ項目ではなく、ホームからのタップで /goals へ遷移 */}
       <Link href="/goals">
@@ -31,7 +32,7 @@ export default function HomePage() {
           kind="save"
           layout="featured"
           label="ためる"
-          icon={<span style={{ fontSize: 20 }}>🐷</span>}
+          icon={<BoxIcon kind="save" />}
           amount={balances.save}
           goal={
             activeGoal
@@ -55,7 +56,7 @@ export default function HomePage() {
               theme={theme}
               kind="spend"
               label="つかう"
-              icon={<span style={{ fontSize: 20 }}>👛</span>}
+              icon={<BoxIcon kind="spend" />}
               amount={balances.spend}
             />
           </Link>
@@ -65,7 +66,7 @@ export default function HomePage() {
             theme={theme}
             kind="grow"
             label="ふやす"
-            icon={<span style={{ fontSize: 20 }}>🌱</span>}
+            icon={<BoxIcon kind="grow" />}
             amount={balances.grow}
           />
         </div>

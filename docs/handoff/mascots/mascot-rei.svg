@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="112" viewBox="0 0 96 112" fill="none">
+  <defs>
+    <radialGradient id="reiBody" cx="42%" cy="34%" r="72%">
+      <stop offset="0%" stop-color="#BDEBFF"></stop>
+      <stop offset="60%" stop-color="#7FCDF4"></stop>
+      <stop offset="100%" stop-color="#56B7EC"></stop>
+    </radialGradient>
+    <linearGradient id="reiLeaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7FD89A"></stop><stop offset="100%" stop-color="#4FB477"></stop>
+    </linearGradient>
+  </defs>
+  
+  <ellipse cx="48" cy="60" rx="42" ry="44" fill="#BFE9FF" opacity=".35"></ellipse>
+  
+  <path d="M48 18 C45 9 36 7 30 9 C31 17 39 21 48 20 Z" fill="url(#reiLeaf)"></path>
+  <path d="M48 19 C51 11 59 9 65 11 C64 18 56 22 48 20 Z" fill="url(#reiLeaf)" opacity=".92"></path>
+  
+  <path d="M48 22 C70 22 84 40 84 62 C84 86 68 100 48 100 C28 100 12 86 12 62 C12 40 26 22 48 22 Z" fill="url(#reiBody)"></path>
+  
+  <ellipse cx="48" cy="70" rx="24" ry="22" fill="#EAF8FF" opacity=".55"></ellipse>
+  
+  <circle cx="30" cy="68" r="7" fill="#FF9C8C" opacity=".75"></circle>
+  <circle cx="66" cy="68" r="7" fill="#FF9C8C" opacity=".75"></circle>
+  
+  <circle cx="38" cy="56" r="5.4" fill="#1B3A6B"></circle>
+  <circle cx="58" cy="56" r="5.4" fill="#1B3A6B"></circle>
+  <circle cx="39.6" cy="54.2" r="1.8" fill="#fff"></circle>
+  <circle cx="59.6" cy="54.2" r="1.8" fill="#fff"></circle>
+  
+  <path d="M40 70 Q48 78 56 70" stroke="#1B3A6B" stroke-width="3.4" stroke-linecap="round" fill="none"></path>
+  
+  <circle cx="30" cy="44" r="4.4" fill="#fff" opacity=".7"></circle>
+</svg>

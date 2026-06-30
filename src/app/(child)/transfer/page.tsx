@@ -9,6 +9,7 @@ import {
 } from "@/lib/mock/MockBalancesContext";
 import { useAccounts } from "@/hooks/useAccounts";
 import { transferMoney } from "@/lib/money/rpc";
+import { BoxIcon } from "@/components/child/boxIcons";
 
 // transfer_money RPC(supabase/migrations/0001_init.sql)の例外メッセージを
 // モックと同じひらがなメッセージにマッピングする
@@ -20,14 +21,14 @@ function mapRpcError(message: string): string {
   return message;
 }
 
-const ACCOUNTS: { kind: AccountKind; label: string; emoji: string }[] = [
-  { kind: "spend", label: "つかう", emoji: "👛" },
-  { kind: "save", label: "ためる", emoji: "🐷" },
-  { kind: "grow", label: "ふやす", emoji: "🌱" },
+const ACCOUNTS: { kind: AccountKind; label: string }[] = [
+  { kind: "spend", label: "つかう" },
+  { kind: "save", label: "ためる" },
+  { kind: "grow", label: "ふやす" },
 ];
 
 function AccountTile({
-  emoji,
+  kind,
   label,
   amount,
   selected,
@@ -35,7 +36,7 @@ function AccountTile({
   onClick,
   theme,
 }: {
-  emoji: string;
+  kind: AccountKind;
   label: string;
   amount: number;
   selected: boolean;
@@ -86,7 +87,7 @@ function AccountTile({
           ✓
         </span>
       )}
-      <span style={{ fontSize: 28 }}>{emoji}</span>
+      <BoxIcon kind={kind} size={28} />
       <span style={{ fontWeight: 800, fontSize: 13 }}>{label}</span>
       <span style={{ fontSize: 11, opacity: 0.8 }}>
         {new Intl.NumberFormat("ja-JP").format(amount)}えん
@@ -208,7 +209,7 @@ export default function TransferPage() {
             <AccountTile
               key={account.kind}
               theme={theme}
-              emoji={account.emoji}
+              kind={account.kind}
               label={account.label}
               amount={currentBalances[account.kind]}
               selected={from === account.kind}
@@ -240,7 +241,7 @@ export default function TransferPage() {
             <AccountTile
               key={account.kind}
               theme={theme}
-              emoji={account.emoji}
+              kind={account.kind}
               label={account.label}
               amount={currentBalances[account.kind]}
               selected={to === account.kind}
