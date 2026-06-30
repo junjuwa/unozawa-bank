@@ -50,8 +50,8 @@ export function useMyJobRequests() {
   return { requests, loading, refetch };
 }
 
-// 親: 家族全員分のjob_requestsを取得（お仕事名・子の名前をjoin）。未ログインならnull。
-// RLSに頼らず、まず子供のprofile_idを取得してから明示的にinフィルタをかける。
+// 親: SECURITY DEFINER RPC経由で家族全員分のjob_requestsを取得。
+// RLS/is_parent()設定に依存せず、auth.uid()→profilesでrole確認するため確実に動作する。
 export function useFamilyJobRequests() {
   const [requests, setRequests] = useState<FamilyJobRequest[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,29 +65,33 @@ export function useFamilyJobRequests() {
       return;
     }
 
-    // 1. 自家族の子供profile_idを取得（profiles RLSで親は自家族のみ見える）
-    const { data: children } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("role", "child");
+    const { data, error } = await supabase.rpc("get_family_job_requests");
 
-    const childIds = (children ?? []).map((c: { id: string }) => c.id);
-    if (childIds.length === 0) {
+    if (error) {
+      // forbidden = 親プロフィール未設定などの場合。空配列にしてモックへフォールバックさせない。
       setRequests([]);
       setLoading(false);
       return;
     }
 
-    // 2. 子供のprofile_idを明示フィルタしてjob_requestsを取得
-    const { data } = await supabase
-      .from("job_requests")
-      .select(
-        "id, task_id, reward_snapshot, status, requested_at, decided_at, job_tasks(name), profiles(display_name)",
-      )
-      .in("profile_id", childIds)
-      .order("requested_at", { ascending: false });
+    // RPCの戻り値をFamilyJobRequest型に変換
+    const rows = (data ?? []).map((r: {
+      id: string; task_id: string; profile_id: string;
+      reward_snapshot: number; status: string;
+      requested_at: string; decided_at: string | null;
+      job_task_name: string | null; profile_display_name: string | null;
+    }) => ({
+      id: r.id,
+      task_id: r.task_id,
+      reward_snapshot: r.reward_snapshot,
+      status: r.status as JobRequestStatus,
+      requested_at: r.requested_at,
+      decided_at: r.decided_at,
+      job_tasks: r.job_task_name ? { name: r.job_task_name } : null,
+      profiles: r.profile_display_name ? { display_name: r.profile_display_name } : null,
+    }));
 
-    setRequests((data as unknown as FamilyJobRequest[]) ?? []);
+    setRequests(rows);
     setLoading(false);
   }, []);
 

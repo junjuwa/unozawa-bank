@@ -6,6 +6,7 @@ import { useMockAvatars } from "@/lib/mock/MockAvatarsContext";
 import { useMockMascot } from "@/lib/mock/MockMascotContext";
 import { THEME_LABELS, ThemeKey } from "@/lib/theme/themes";
 import { createClient } from "@/lib/supabase/client";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const CHILDREN = ["rei_blue", "jun_red"] as const;
 
@@ -13,31 +14,35 @@ type ChildProfile = { id: string; theme_key: ThemeKey; display_name: string; ava
 
 function useChildProfiles() {
   const [profiles, setProfiles] = useState<ChildProfile[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) { setProfiles(null); return; }
+    if (!userData.user) { setProfiles(null); setLoading(false); return; }
     const { data } = await supabase
       .from("profiles")
       .select("id, theme_key, display_name, avatar_url, mascot_url")
       .eq("role", "child");
     setProfiles((data as ChildProfile[]) ?? null);
+    setLoading(false);
   }, []);
 
   useEffect(() => { refetch(); }, [refetch]);
-  return { profiles, refetch };
+  return { profiles, loading, refetch };
 }
 
 export default function AvatarsPage() {
   const theme = childThemes.parent_dark;
   const { avatars, setAvatar, clearAvatar } = useMockAvatars();
   const { mascots, setMascotImage, clearMascotImage } = useMockMascot();
-  const { profiles, refetch } = useChildProfiles();
+  const { profiles, loading: profilesLoading, refetch } = useChildProfiles();
   const isReal = profiles !== null;
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const mascotInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  if (profilesLoading) return <LoadingScreen />;
 
   function readAsDataUrl(file: File, onDone: (dataUrl: string) => void) {
     const reader = new FileReader();

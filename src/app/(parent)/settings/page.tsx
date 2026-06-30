@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { SettingRow } from "@/components/parent/SettingRow";
 import { registerPasskey } from "@/lib/auth/passkey";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const CHILDREN = ["rei_blue", "jun_red"] as const;
 
@@ -29,9 +30,10 @@ export default function SettingsPage() {
   } = useMockSettings();
   const { creditReward } = useMockBalances();
 
-  const { settings: familySettings, updateFamilySettings } = useFamilySettings();
+  const { settings: familySettings, loading: settingsLoading, updateFamilySettings } = useFamilySettings();
   const {
     catalog: realCatalog,
+    loading: catalogLoading,
     addJobTask,
     updateJobTask,
     removeJobTask,
@@ -85,6 +87,8 @@ export default function SettingsPage() {
   const [passkeyMessage, setPasskeyMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
   );
+
+  if (settingsLoading || catalogLoading) return <LoadingScreen />;
 
   async function handleRegisterPasskey() {
     setPasskeyMessage(null);
