@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
 
   // ① 子のauth userを作成（パスワードなし。design.mdの要件どおり）
-  const syntheticEmail = `child-${crypto.randomUUID()}@unozawa-bank.invalid`;
+  // パスキーの表示名をわかりやすくするため、themeKeyをメールプレフィックスに使う
+  const syntheticEmail = `${themeKey}@unozawa-bank.invalid`;
   const { data: createdUser, error: createUserError } = await admin.auth.admin.createUser({
     email: syntheticEmail,
     email_confirm: true,
