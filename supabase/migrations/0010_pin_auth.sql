@@ -1,15 +1,15 @@
 -- profiles に pin_hash カラムを追加（未設定=nullはPINなし扱い）
 alter table public.profiles add column if not exists pin_hash text;
 
--- pgcrypto が必要（Supabaseはデフォルトで有効）
-create extension if not exists pgcrypto;
+-- pgcrypto は Supabase でデフォルト有効（extensions スキーマ）
+-- search_path に extensions を追加することで gen_salt/crypt が使える
 
 -- set_pin: 親は自分・同family子供のPINを設定可。子は自分のみ。
 create or replace function public.set_pin(p_profile_id uuid, p_pin text)
 returns void
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_caller_role text;
@@ -51,7 +51,7 @@ create or replace function public.verify_pin(p_pin text)
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_hash text;

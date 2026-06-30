@@ -44,6 +44,9 @@ export default function SettingsPage() {
   const isReal = familySettings !== null;
 
   const [salaryMessage, setSalaryMessage] = useState<string | null>(null);
+  // 基本給の編集はローカルstateで管理し、onBlurでDBに保存する
+  // （DBの値をそのままvalueにするとrefetchのたびに入力がリセットされる）
+  const [salaryDraft, setSalaryDraft] = useState<Record<string, number | string>>({});
   const [customPayTarget, setCustomPayTarget] = useState<string>("");
   const [customPayAmount, setCustomPayAmount] = useState<number>(0);
   const [customPayMessage, setCustomPayMessage] = useState<string | null>(null);
@@ -170,8 +173,13 @@ export default function SettingsPage() {
               <span style={{ flex: 1, fontSize: 13, color: theme.ink }}>{child.displayName}</span>
               <input
                 type="number"
-                value={child.baseSalary}
-                onChange={(e) => handleUpdateBaseSalary(child.profileId, Math.max(0, Number(e.target.value)))}
+                value={salaryDraft[child.profileId] ?? child.baseSalary}
+                onChange={(e) => setSalaryDraft((d) => ({ ...d, [child.profileId]: e.target.value }))}
+                onBlur={(e) => {
+                  const v = Math.max(0, Number(e.target.value));
+                  setSalaryDraft((d) => ({ ...d, [child.profileId]: v }));
+                  handleUpdateBaseSalary(child.profileId, v);
+                }}
                 style={{
                   width: 80,
                   textAlign: "right",

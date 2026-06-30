@@ -21,7 +21,7 @@ export default function ChildLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const { theme: themeKey, setTheme } = useMockChildTheme();
   const theme = childThemes[themeKey];
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
 
   // 実ログイン済みの場合はプロフィールのtheme_keyに合わせてテーマを自動切替
   useEffect(() => {
@@ -58,6 +58,7 @@ export default function ChildLayout({
     <PinGate
       userId={userId}
       hasPinHash={hasPinHash}
+      profileLoading={profileLoading}
       userName={name}
       accentColor={theme.accent}
     >

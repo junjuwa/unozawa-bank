@@ -11,7 +11,7 @@ export default function ParentLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const theme = childThemes.parent_dark;
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const router = useRouter();
   const displayName =
     typeof profile?.display_name === "string" ? profile.display_name : "おとうさん";
@@ -25,7 +25,7 @@ export default function ParentLayout({
   }
 
   return (
-    <PinGate userId={userId} hasPinHash={hasPinHash} userName={displayName} accentColor={theme.accent}>
+    <PinGate userId={userId} hasPinHash={hasPinHash} profileLoading={profileLoading} userName={displayName} accentColor={theme.accent}>
     <div
       style={{
         minHeight: "100vh",
