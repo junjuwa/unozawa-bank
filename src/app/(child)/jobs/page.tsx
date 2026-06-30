@@ -27,6 +27,7 @@ export default function JobsPage() {
             job={job}
             name={catalogItem.name}
             reward={reward}
+            condition={catalogItem.condition}
             onApply={() => applyJob(themeKey, job.id, catalogItem.reward)}
           />
         );

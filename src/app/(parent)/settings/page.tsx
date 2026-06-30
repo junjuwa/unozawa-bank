@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockSettings } from "@/lib/mock/MockSettingsContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
@@ -10,12 +11,33 @@ const CHILDREN = ["rei_blue", "jun_red"] as const;
 
 export default function SettingsPage() {
   const theme = childThemes.parent_dark;
-  const { settings, setBasePay, setInvestRate, setInvestTermDays, setJobReward } =
-    useMockSettings();
+  const {
+    settings,
+    setBasePay,
+    setInvestRate,
+    setInvestTermDays,
+    setJobReward,
+    setJobCondition,
+    addJob,
+  } = useMockSettings();
   const { creditReward } = useMockBalances();
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newReward, setNewReward] = useState(0);
+  const [newCondition, setNewCondition] = useState("");
 
   const examplePrincipal = 500;
   const exampleInterest = Math.round(examplePrincipal * settings.investRate);
+
+  function handleAddJob() {
+    if (!newName.trim()) return;
+    addJob(newName.trim(), newReward, newCondition.trim());
+    setNewName("");
+    setNewReward(0);
+    setNewCondition("");
+    setShowAddForm(false);
+  }
 
   return (
     <div className="flex flex-col gap-5 pt-2">
@@ -38,6 +60,21 @@ export default function SettingsPage() {
                 onDecrement={() => setBasePay(key, Math.max(0, settings.basePay[key] - 50))}
               />
             </div>
+            <input
+              type="number"
+              value={settings.basePay[key]}
+              onChange={(e) => setBasePay(key, Math.max(0, Number(e.target.value)))}
+              style={{
+                width: 80,
+                textAlign: "right",
+                background: theme.frameBg,
+                color: theme.ink,
+                border: "1px solid #3A424C",
+                borderRadius: 8,
+                padding: "6px 8px",
+                fontSize: 13,
+              }}
+            />
             <button
               type="button"
               onClick={() => creditReward(key, settings.basePay[key])}
@@ -97,16 +134,95 @@ export default function SettingsPage() {
           承認時に「つかう」へ加算。すでに申請中／承認済みのおしごとには反映されません（申請時点の単価で固定）
         </p>
         {settings.jobCatalog.map((job) => (
-          <SettingRow
-            key={job.id}
-            theme={theme}
-            label={job.name}
-            value={job.reward}
-            unit="円"
-            onIncrement={() => setJobReward(job.id, job.reward + 10)}
-            onDecrement={() => setJobReward(job.id, Math.max(0, job.reward - 10))}
-          />
+          <div key={job.id} style={{ borderBottom: "1px solid #3A424C", padding: "12px 0" }}>
+            <SettingRow
+              theme={theme}
+              label={job.name}
+              value={job.reward}
+              unit="円"
+              onIncrement={() => setJobReward(job.id, job.reward + 10)}
+              onDecrement={() => setJobReward(job.id, Math.max(0, job.reward - 10))}
+            />
+            <label style={{ display: "block", fontSize: 11, color: theme.sub, marginTop: 6 }}>
+              完了条件
+              <input
+                type="text"
+                value={job.condition}
+                onChange={(e) => setJobCondition(job.id, e.target.value)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  marginTop: 4,
+                  background: theme.frameBg,
+                  color: theme.ink,
+                  border: "1px solid #3A424C",
+                  borderRadius: 8,
+                  padding: "6px 8px",
+                  fontSize: 12,
+                }}
+              />
+            </label>
+          </div>
         ))}
+
+        {showAddForm ? (
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            <input
+              type="text"
+              placeholder="おしごとの名前"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              style={{ background: theme.frameBg, color: theme.ink, border: "1px solid #3A424C", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}
+            />
+            <input
+              type="number"
+              placeholder="単価（円）"
+              value={newReward}
+              onChange={(e) => setNewReward(Math.max(0, Number(e.target.value)))}
+              style={{ background: theme.frameBg, color: theme.ink, border: "1px solid #3A424C", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}
+            />
+            <input
+              type="text"
+              placeholder="完了条件"
+              value={newCondition}
+              onChange={(e) => setNewCondition(e.target.value)}
+              style={{ background: theme.frameBg, color: theme.ink, border: "1px solid #3A424C", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleAddJob}
+                style={{ flex: 1, background: theme.accent, color: "#fff", borderRadius: 8, padding: "8px 0", fontWeight: 700, fontSize: 13 }}
+              >
+                追加する
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                style={{ flex: 1, border: "1px solid #3A424C", color: theme.sub, borderRadius: 8, padding: "8px 0", fontWeight: 700, fontSize: 13 }}
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(true)}
+            style={{
+              marginTop: 12,
+              width: "100%",
+              border: `1px dashed ${theme.accent}`,
+              color: theme.accent,
+              borderRadius: 8,
+              padding: "10px 0",
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+          >
+            ＋ おしごとを追加
+          </button>
+        )}
       </section>
     </div>
   );

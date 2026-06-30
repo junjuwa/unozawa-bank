@@ -27,6 +27,8 @@ type MockSettingsContextValue = {
   setInvestRate: (value: number) => void;
   setInvestTermDays: (value: number) => void;
   setJobReward: (jobId: string, value: number) => void;
+  setJobCondition: (jobId: string, value: string) => void;
+  addJob: (name: string, reward: number, condition: string) => void;
 };
 
 const MockSettingsContext = createContext<MockSettingsContextValue | null>(null);
@@ -49,10 +51,33 @@ export function MockSettingsProvider({ children }: { children: React.ReactNode }
       jobCatalog: prev.jobCatalog.map((job) => (job.id === jobId ? { ...job, reward: value } : job)),
     }));
   }
+  function setJobCondition(jobId: string, value: string) {
+    setSettings((prev) => ({
+      ...prev,
+      jobCatalog: prev.jobCatalog.map((job) => (job.id === jobId ? { ...job, condition: value } : job)),
+    }));
+  }
+  function addJob(name: string, reward: number, condition: string) {
+    setSettings((prev) => ({
+      ...prev,
+      jobCatalog: [
+        ...prev.jobCatalog,
+        { id: crypto.randomUUID(), name, reward, condition },
+      ],
+    }));
+  }
 
   return (
     <MockSettingsContext.Provider
-      value={{ settings, setBasePay, setInvestRate, setInvestTermDays, setJobReward }}
+      value={{
+        settings,
+        setBasePay,
+        setInvestRate,
+        setInvestTermDays,
+        setJobReward,
+        setJobCondition,
+        addJob,
+      }}
     >
       {children}
     </MockSettingsContext.Provider>
