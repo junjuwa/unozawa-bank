@@ -26,6 +26,8 @@ const INITIAL_GOALS: Record<ThemeKey, Goal[]> = {
 type MockGoalsContextValue = {
   goals: Record<ThemeKey, Goal[]>;
   addGoal: (theme: ThemeKey, name: string, target: number) => void;
+  removeGoal: (theme: ThemeKey, id: string) => void;
+  moveGoal: (theme: ThemeKey, id: string, direction: "up" | "down") => void;
 };
 
 const MockGoalsContext = createContext<MockGoalsContextValue | null>(null);
@@ -46,8 +48,34 @@ export function MockGoalsProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
+  // 削除した目標がactiveだった場合、残った先頭の目標を自動でactiveにする
+  // （「いま ためてる」が常に1件存在するようにするため）
+  function removeGoal(theme: ThemeKey, id: string) {
+    setGoals((prev) => {
+      const removed = prev[theme].find((g) => g.id === id);
+      const rest = prev[theme].filter((g) => g.id !== id);
+      if (removed?.active && rest.length > 0 && !rest.some((g) => g.active)) {
+        rest[0] = { ...rest[0], active: true };
+      }
+      return { ...prev, [theme]: rest };
+    });
+  }
+
+  function moveGoal(theme: ThemeKey, id: string, direction: "up" | "down") {
+    setGoals((prev) => {
+      const list = [...prev[theme]];
+      const index = list.findIndex((g) => g.id === id);
+      const swapWith = direction === "up" ? index - 1 : index + 1;
+      if (index < 0 || swapWith < 0 || swapWith >= list.length) return prev;
+      [list[index], list[swapWith]] = [list[swapWith], list[index]];
+      return { ...prev, [theme]: list };
+    });
+  }
+
   return (
-    <MockGoalsContext.Provider value={{ goals, addGoal }}>{children}</MockGoalsContext.Provider>
+    <MockGoalsContext.Provider value={{ goals, addGoal, removeGoal, moveGoal }}>
+      {children}
+    </MockGoalsContext.Provider>
   );
 }
 

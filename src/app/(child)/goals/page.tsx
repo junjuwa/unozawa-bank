@@ -11,7 +11,7 @@ export default function GoalsPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const save = useMockBalances().balances[themeKey].save;
-  const { goals, addGoal } = useMockGoals();
+  const { goals, addGoal, removeGoal, moveGoal } = useMockGoals();
   const childGoals = goals[themeKey];
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -31,10 +31,65 @@ export default function GoalsPage() {
       <h1 style={{ fontWeight: 900, fontSize: 18, color: theme.ink }}>
         もくひょう いちらん
       </h1>
-      {childGoals.map((goal) => (
+      {childGoals.map((goal, index) => (
         <div key={goal.id}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: theme.sub, marginBottom: 4 }}>
-            {goal.active ? "いま ためてる" : "つぎ"}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: theme.sub }}>
+              {goal.active ? "いま ためてる" : "つぎ"}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => moveGoal(themeKey, goal.id, "up")}
+                disabled={index === 0}
+                aria-label="上に動かす"
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  border: `1px solid ${theme.sub}`,
+                  color: theme.sub,
+                  opacity: index === 0 ? 0.3 : 1,
+                  fontSize: 12,
+                }}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => moveGoal(themeKey, goal.id, "down")}
+                disabled={index === childGoals.length - 1}
+                aria-label="下に動かす"
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  border: `1px solid ${theme.sub}`,
+                  color: theme.sub,
+                  opacity: index === childGoals.length - 1 ? 0.3 : 1,
+                  fontSize: 12,
+                }}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`「${goal.name}」を削除しますか？`)) removeGoal(themeKey, goal.id);
+                }}
+                aria-label="削除"
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  border: "1px solid #E26D62",
+                  color: "#E26D62",
+                  fontSize: 12,
+                }}
+              >
+                ✕
+              </button>
+            </div>
           </div>
           <div
             style={{
