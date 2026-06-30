@@ -1,10 +1,9 @@
 "use client";
 
-// TODO(auth): 本実装ではsrc/lib/supabase/client.tsのsupabase.auth.signInWithPassword()に置き換える。
-// 今は入力の有無だけ確認して/dashboardへ遷移する（実認証なし）。
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { childThemes } from "@/lib/theme/childTheme";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ParentLoginPage() {
   const router = useRouter();
@@ -12,11 +11,21 @@ export default function ParentLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) {
       setError("メールアドレスとパスワードを入力してください");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    setSubmitting(false);
+    if (signInError) {
+      setError(signInError.message);
       return;
     }
     router.push("/dashboard");
@@ -91,6 +100,7 @@ export default function ParentLoginPage() {
         {error && <p style={{ color: "#E26D62", fontSize: 12 }}>{error}</p>}
         <button
           type="submit"
+          disabled={submitting}
           style={{
             marginTop: 8,
             background: theme.accent,
@@ -99,9 +109,10 @@ export default function ParentLoginPage() {
             padding: "10px 0",
             fontWeight: 700,
             fontSize: 14,
+            opacity: submitting ? 0.6 : 1,
           }}
         >
-          ログイン
+          {submitting ? "ログイン中…" : "ログイン"}
         </button>
       </form>
     </main>

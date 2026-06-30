@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const PARENT_PATHS = ["/dashboard", "/approvals", "/settings", "/avatars", "/setup"];
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -25,8 +27,19 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // セッションを更新する（トークンrefresh）。ロール別ルート保護は実装時に追加する。
-  await supabase.auth.getUser();
+  // セッションを更新する（トークンrefresh）
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 親ルートは未ログインなら/parent-loginへ。
+  // TODO(auth): profiles.role==='parent'の厳密チェックは子のパスキー認証実装時に追加する。
+  const isParentPath = PARENT_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+  if (isParentPath && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/parent-login";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
