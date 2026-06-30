@@ -5,6 +5,8 @@ import { childThemes } from "@/lib/theme/childTheme";
 import { useMockJobs } from "@/lib/mock/MockJobsContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useMockSettings } from "@/lib/mock/MockSettingsContext";
+import { useFamilyJobRequests } from "@/hooks/useJobRequests";
+import { approveJobRequest, rejectJobRequest } from "@/lib/money/rpc";
 import { THEME_LABELS, ThemeKey } from "@/lib/theme/themes";
 import { ApprovalCard } from "@/components/parent/ApprovalCard";
 
@@ -15,10 +17,106 @@ export default function ApprovalsPage() {
   const { jobs, decideJob } = useMockJobs();
   const { creditReward } = useMockBalances();
   const { settings } = useMockSettings();
+  const { requests, refetch } = useFamilyJobRequests();
   const [filter, setFilter] = useState<"all" | ThemeKey>("all");
 
   function catalogName(catalogId: string) {
     return settings.jobCatalog.find((c) => c.id === catalogId)?.name ?? catalogId;
+  }
+
+  // 実ログイン済み（requests !== null）なら実DB、未ログインならモックにフォールバック
+  if (requests) {
+    const filtered =
+      filter === "all"
+        ? requests
+        : requests.filter((r) => r.profiles?.display_name === THEME_LABELS[filter].split("（")[0]);
+
+    const pending = filtered.filter((r) => r.status === "pending");
+    const history = filtered.filter((r) => r.decided_at);
+
+    async function handleApprove(requestId: string) {
+      await approveJobRequest(requestId);
+      refetch();
+    }
+    async function handleReject(requestId: string) {
+      await rejectJobRequest(requestId);
+      refetch();
+    }
+
+    return (
+      <div className="flex flex-col gap-5 pt-2">
+        <div className="flex gap-2">
+          {(["all", ...CHILDREN] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilter(key)}
+              style={{
+                borderRadius: 16,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                background: filter === key ? theme.accent : "transparent",
+                color: filter === key ? "#fff" : theme.sub,
+                border: `1px solid ${filter === key ? theme.accent : "#3A424C"}`,
+              }}
+            >
+              {key === "all" ? "ぜんぶ" : THEME_LABELS[key].split("（")[0]}
+            </button>
+          ))}
+        </div>
+
+        <section>
+          <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 10 }}>しんせいちゅう</h2>
+          <div className="flex flex-col gap-3">
+            {pending.length === 0 ? (
+              <p style={{ fontSize: 12, color: theme.sub }}>しんせいは ありません</p>
+            ) : (
+              pending.map((r) => (
+                <ApprovalCard
+                  key={r.id}
+                  theme={theme}
+                  childName={r.profiles?.display_name ?? ""}
+                  jobName={r.job_tasks?.name ?? ""}
+                  reward={r.reward_snapshot}
+                  onApprove={() => handleApprove(r.id)}
+                  onReject={() => handleReject(r.id)}
+                />
+              ))
+            )}
+          </div>
+        </section>
+
+        <section>
+          <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 10 }}>承認履歴</h2>
+          <div
+            style={{
+              background: theme.cardBg,
+              borderRadius: theme.cardRadius,
+              border: theme.cardBorder,
+              padding: 16,
+            }}
+          >
+            {history.length === 0 ? (
+              <p style={{ fontSize: 12, color: theme.sub }}>まだ ありません</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {history.map((r) => (
+                  <li key={r.id} style={{ fontSize: 13, display: "flex", justifyContent: "space-between" }}>
+                    <span>
+                      {r.profiles?.display_name ?? ""} — {r.job_tasks?.name ?? ""}
+                    </span>
+                    <span style={{ color: r.status === "approved" ? "#3DB66E" : "#E26D62" }}>
+                      {r.status === "approved" ? "承認" : "却下"} ¥{r.reward_snapshot}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
+    );
   }
 
   const targets = filter === "all" ? CHILDREN : [filter];
@@ -29,7 +127,7 @@ export default function ApprovalsPage() {
       .map((j) => ({ key, job: j })),
   );
 
-  const history = targets
+  const mockHistory = targets
     .flatMap((key) =>
       jobs[key]
         .filter((j) => j.decidedAt)
@@ -100,11 +198,11 @@ export default function ApprovalsPage() {
             padding: 16,
           }}
         >
-          {history.length === 0 ? (
+          {mockHistory.length === 0 ? (
             <p style={{ fontSize: 12, color: theme.sub }}>まだ ありません</p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {history.map(({ key, job }) => (
+              {mockHistory.map(({ key, job }) => (
                 <li key={`${key}-${job.id}`} style={{ fontSize: 13, display: "flex", justifyContent: "space-between" }}>
                   <span>
                     {THEME_LABELS[key].split("（")[0]} — {catalogName(job.catalogId)}

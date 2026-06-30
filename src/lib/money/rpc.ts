@@ -19,3 +19,8 @@ export async function approveJobRequest(requestId: string) {
   const supabase = createClient();
   return supabase.rpc("approve_job_request", { p_request_id: requestId });
 }
+
+export async function rejectJobRequest(requestId: string) {
+  const supabase = createClient();
+  return supabase.rpc("reject_job_request", { p_request_id: requestId });
+}

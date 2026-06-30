@@ -3,27 +3,26 @@
 
 import { useState } from "react";
 import { ChildTheme } from "@/lib/theme/childTheme";
-import { MockJob } from "@/lib/mock/jobsMock";
-import { STATUS_COLORS } from "@/lib/theme/statusColors";
+import { JobStatus, STATUS_COLORS } from "@/lib/theme/statusColors";
 import { ConditionPopup } from "@/components/child/ConditionPopup";
 
 export function JobCard({
   theme,
-  job,
+  status: jobStatus,
   name,
   reward,
   condition,
   onApply,
 }: {
   theme: ChildTheme;
-  job: MockJob;
+  status: JobStatus;
   name: string;
   reward: number;
   condition: string;
   onApply: () => void;
 }) {
-  const status = STATUS_COLORS[job.status];
-  const isApply = job.status === "apply";
+  const status = STATUS_COLORS[jobStatus];
+  const isApply = jobStatus === "apply";
   const [showCondition, setShowCondition] = useState(false);
 
   return (
