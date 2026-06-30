@@ -8,7 +8,13 @@
 import { createContext, useContext, useState } from "react";
 import { ThemeKey } from "@/lib/theme/themes";
 
-export type Goal = { id: string; name: string; target: number; active: boolean };
+export type Goal = {
+  id: string;
+  name: string;
+  target: number;
+  active: boolean;
+  imageUrl?: string;
+};
 
 // Okozukai-Home.html のれい/じゅん実例(850円/あと650円=1500円, じてんしゃ12000円)を踏襲
 const INITIAL_GOALS: Record<ThemeKey, Goal[]> = {
@@ -28,6 +34,7 @@ type MockGoalsContextValue = {
   addGoal: (theme: ThemeKey, name: string, target: number) => void;
   removeGoal: (theme: ThemeKey, id: string) => void;
   moveGoal: (theme: ThemeKey, id: string, direction: "up" | "down") => void;
+  setGoalImage: (theme: ThemeKey, id: string, dataUrl: string) => void;
 };
 
 const MockGoalsContext = createContext<MockGoalsContextValue | null>(null);
@@ -72,8 +79,15 @@ export function MockGoalsProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
+  function setGoalImage(theme: ThemeKey, id: string, dataUrl: string) {
+    setGoals((prev) => ({
+      ...prev,
+      [theme]: prev[theme].map((g) => (g.id === id ? { ...g, imageUrl: dataUrl } : g)),
+    }));
+  }
+
   return (
-    <MockGoalsContext.Provider value={{ goals, addGoal, removeGoal, moveGoal }}>
+    <MockGoalsContext.Provider value={{ goals, addGoal, removeGoal, moveGoal, setGoalImage }}>
       {children}
     </MockGoalsContext.Provider>
   );

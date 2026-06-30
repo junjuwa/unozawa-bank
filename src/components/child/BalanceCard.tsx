@@ -14,7 +14,7 @@ type BalanceCardProps = {
   // ためるカードのみ"featured"（アイコン+ラベル+金額を横一列のヘッダーにし、目標を内包する）。
   // つかう/ふやすは"compact"（アイコン→ラベル→金額→コイン列の縦並び。HANDOFF.md実例の構造）。
   layout?: "featured" | "compact";
-  goal?: { name: string; current: number; target: number; otherCount: number };
+  goal?: { name: string; current: number; target: number; otherCount: number; imageUrl?: string };
 };
 
 export function BalanceCard({
@@ -70,7 +70,13 @@ export function BalanceCard({
         </div>
         {goal && goal.target > 0 && (
           <>
-            <GoalCard theme={theme} name={goal.name} current={goal.current} target={goal.target} />
+            <GoalCard
+              theme={theme}
+              name={goal.name}
+              current={goal.current}
+              target={goal.target}
+              imageUrl={goal.imageUrl}
+            />
             {goal.otherCount > 0 && (
               <div style={{ fontSize: 12, color: theme.sub, textAlign: "right", marginTop: 4 }}>
                 ほかに {goal.otherCount}こ ＞

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useMockGoals } from "@/lib/mock/MockGoalsContext";
@@ -11,8 +11,9 @@ export default function GoalsPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const save = useMockBalances().balances[themeKey].save;
-  const { goals, addGoal, removeGoal, moveGoal } = useMockGoals();
+  const { goals, addGoal, removeGoal, moveGoal, setGoalImage } = useMockGoals();
   const childGoals = goals[themeKey];
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -24,6 +25,15 @@ export default function GoalsPage() {
     setNewName("");
     setNewTarget(0);
     setShowAddForm(false);
+  }
+
+  function handleImageChange(goalId: string, file: File | null) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setGoalImage(themeKey, goalId, reader.result);
+    };
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -100,11 +110,22 @@ export default function GoalsPage() {
               padding: 16,
             }}
           >
+            <input
+              ref={(el) => {
+                inputRefs.current[goal.id] = el;
+              }}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => handleImageChange(goal.id, e.target.files?.[0] ?? null)}
+            />
             <GoalCard
               theme={theme}
               name={goal.name}
               current={goal.active ? save : 0}
               target={goal.target}
+              imageUrl={goal.imageUrl}
+              onImageClick={() => inputRefs.current[goal.id]?.click()}
             />
           </div>
         </div>

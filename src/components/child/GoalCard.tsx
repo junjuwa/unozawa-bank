@@ -9,20 +9,27 @@ export function GoalCard({
   name,
   current,
   target,
+  imageUrl,
+  onImageClick,
 }: {
   theme: ChildTheme;
   name: string;
   current: number;
   target: number;
+  imageUrl?: string | null;
+  onImageClick?: () => void;
 }) {
   const remaining = Math.max(target - current, 0);
   const progress = Math.min(100, Math.round((current / target) * 100));
 
   return (
-    <div>
+    <div style={{ color: theme.ink }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-        {/* 画像プレースホルダ（image-slot代替）*/}
-        <div
+        {/* 画像プレースホルダ（image-slot代替）。onImageClickがあればタップでアップロード可能 */}
+        <button
+          type="button"
+          onClick={onImageClick}
+          disabled={!onImageClick}
           style={{
             width: 56,
             height: 56,
@@ -35,10 +42,17 @@ export function GoalCard({
             color: theme.sub,
             flexShrink: 0,
             textAlign: "center",
+            overflow: "hidden",
+            cursor: onImageClick ? "pointer" : "default",
           }}
         >
-          ほしい もの
-        </div>
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- モックのdata URL表示のため
+            <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            "ほしい もの"
+          )}
+        </button>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: theme.sub }}>
             <RubyText segs={[["目標", "もくひょう"]]} />

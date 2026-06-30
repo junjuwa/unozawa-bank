@@ -32,7 +32,13 @@ export default function HomePage() {
           amount={balances.save}
           goal={
             activeGoal
-              ? { name: activeGoal.name, current: balances.save, target: activeGoal.target, otherCount }
+              ? {
+                  name: activeGoal.name,
+                  current: balances.save,
+                  target: activeGoal.target,
+                  otherCount,
+                  imageUrl: activeGoal.imageUrl,
+                }
               : undefined
           }
         />
