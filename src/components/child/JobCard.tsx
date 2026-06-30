@@ -6,10 +6,14 @@ import { STATUS_COLORS } from "@/lib/theme/statusColors";
 export function JobCard({
   theme,
   job,
+  name,
+  reward,
   onApply,
 }: {
   theme: ChildTheme;
   job: MockJob;
+  name: string;
+  reward: number;
   onApply: () => void;
 }) {
   const status = STATUS_COLORS[job.status];
@@ -32,9 +36,9 @@ export function JobCard({
       }}
     >
       <div>
-        <div style={{ fontWeight: 800, fontSize: 15 }}>{job.name}</div>
+        <div style={{ fontWeight: 800, fontSize: 15 }}>{name}</div>
         <div style={{ fontSize: 13, color: theme.sub }}>
-          {new Intl.NumberFormat("ja-JP").format(job.reward)}えん
+          {new Intl.NumberFormat("ja-JP").format(reward)}えん
         </div>
       </div>
 

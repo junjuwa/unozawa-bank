@@ -1,20 +1,24 @@
 "use client";
 
-// MOCK ONLY: 本実装では削除し、family_settingsテーブルのupdate（親のみRLS許可）に置き換える。
-// 永続化はせず、設定画面内での表示の一貫性のためだけにstateを持つ。
+// MOCK ONLY: 本実装では削除し、family_settingsテーブルのupdate（親のみRLS許可）・
+// job_tasksテーブルのupdateに置き換える。永続化はせず、設定画面内での
+// 表示の一貫性のためだけにstateを持つ。
 
 import { createContext, useContext, useState } from "react";
+import { INITIAL_JOB_CATALOG, JobCatalogItem } from "@/lib/mock/jobCatalog";
 
 type Settings = {
-  basePay: Record<"rei_blue" | "jun_red", number>;
+  basePay: Record<"rei_blue" | "jun_red", number>; // 円/月（毎月1日支給で固定。0002_monthly_salary.sql参照）
   investRate: number; // 0.05 = 5%
   investTermDays: number;
+  jobCatalog: JobCatalogItem[];
 };
 
 const INITIAL_SETTINGS: Settings = {
   basePay: { rei_blue: 500, jun_red: 500 },
   investRate: 0.05,
   investTermDays: 30,
+  jobCatalog: INITIAL_JOB_CATALOG,
 };
 
 type MockSettingsContextValue = {
@@ -22,6 +26,7 @@ type MockSettingsContextValue = {
   setBasePay: (theme: "rei_blue" | "jun_red", value: number) => void;
   setInvestRate: (value: number) => void;
   setInvestTermDays: (value: number) => void;
+  setJobReward: (jobId: string, value: number) => void;
 };
 
 const MockSettingsContext = createContext<MockSettingsContextValue | null>(null);
@@ -38,10 +43,16 @@ export function MockSettingsProvider({ children }: { children: React.ReactNode }
   function setInvestTermDays(value: number) {
     setSettings((prev) => ({ ...prev, investTermDays: value }));
   }
+  function setJobReward(jobId: string, value: number) {
+    setSettings((prev) => ({
+      ...prev,
+      jobCatalog: prev.jobCatalog.map((job) => (job.id === jobId ? { ...job, reward: value } : job)),
+    }));
+  }
 
   return (
     <MockSettingsContext.Provider
-      value={{ settings, setBasePay, setInvestRate, setInvestTermDays }}
+      value={{ settings, setBasePay, setInvestRate, setInvestTermDays, setJobReward }}
     >
       {children}
     </MockSettingsContext.Provider>

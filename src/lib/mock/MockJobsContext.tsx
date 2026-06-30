@@ -10,7 +10,7 @@ import { INITIAL_JOBS, MockJob } from "@/lib/mock/jobsMock";
 
 type MockJobsContextValue = {
   jobs: Record<ThemeKey, MockJob[]>;
-  applyJob: (theme: ThemeKey, jobId: string) => void;
+  applyJob: (theme: ThemeKey, jobId: string, rewardSnapshot: number) => void;
   decideJob: (theme: ThemeKey, jobId: string, decision: "approved" | "rejected") => void;
 };
 
@@ -19,11 +19,12 @@ const MockJobsContext = createContext<MockJobsContextValue | null>(null);
 export function MockJobsProvider({ children }: { children: React.ReactNode }) {
   const [jobs, setJobs] = useState<Record<ThemeKey, MockJob[]>>(INITIAL_JOBS);
 
-  function applyJob(theme: ThemeKey, jobId: string) {
+  // design.md §7: job_requests.reward_snapshot相当。申請時点の単価を固定する。
+  function applyJob(theme: ThemeKey, jobId: string, rewardSnapshot: number) {
     setJobs((prev) => ({
       ...prev,
       [theme]: prev[theme].map((job) =>
-        job.id === jobId ? { ...job, status: "pending" } : job,
+        job.id === jobId ? { ...job, status: "pending", rewardSnapshot } : job,
       ),
     }));
   }

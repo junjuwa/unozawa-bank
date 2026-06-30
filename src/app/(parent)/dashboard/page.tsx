@@ -3,6 +3,7 @@
 import { childThemes } from "@/lib/theme/childTheme";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useMockJobs } from "@/lib/mock/MockJobsContext";
+import { useMockSettings } from "@/lib/mock/MockSettingsContext";
 import { getGoalsList } from "@/lib/mock/goalsList";
 import { INVEST_LOTS } from "@/lib/mock/investLots";
 import { THEME_LABELS } from "@/lib/theme/themes";
@@ -13,8 +14,13 @@ const CHILDREN = ["rei_blue", "jun_red"] as const;
 
 export default function DashboardPage() {
   const theme = childThemes.parent_dark;
-  const { balances } = useMockBalances();
+  const { balances, weeklyHistory } = useMockBalances();
   const { jobs } = useMockJobs();
+  const { settings } = useMockSettings();
+
+  function catalogName(catalogId: string) {
+    return settings.jobCatalog.find((c) => c.id === catalogId)?.name ?? catalogId;
+  }
 
   const totalBalance = CHILDREN.reduce((sum, key) => {
     const b = balances[key];
@@ -31,15 +37,18 @@ export default function DashboardPage() {
     0,
   );
 
-  // 注: 今週ためた額はトランザクション履歴がまだ無いためモック固定値
-  const weeklySaved = 240;
+  // 「ためる」へ移動された額の曜日別累積（セッション内、§MockBalancesContext参照）の合計
+  const weeklySaved = CHILDREN.reduce(
+    (sum, key) => sum + weeklyHistory[key].reduce((s, n) => s + n, 0),
+    0,
+  );
 
   const activities = CHILDREN.flatMap((key) =>
     jobs[key]
       .filter((j) => j.decidedAt)
       .map((j) => ({
         child: THEME_LABELS[key].split("（")[0],
-        text: `おしごと「${j.name}」を${j.status === "approved" ? "承認" : "却下"}`,
+        text: `おしごと「${catalogName(j.catalogId)}」を${j.status === "approved" ? "承認" : "却下"}`,
         decidedAt: j.decidedAt!,
       })),
   ).sort((a, b) => (a.decidedAt < b.decidedAt ? 1 : -1));
@@ -54,7 +63,7 @@ export default function DashboardPage() {
           value={`${pendingCount}けん`}
           caption={pendingCount > 0 ? "要対応" : undefined}
         />
-        <KpiCard theme={theme} label="今週ためた額" value={`+¥${weeklySaved}`} caption="先週より" />
+        <KpiCard theme={theme} label="今週ためた額" value={`+¥${weeklySaved.toLocaleString("ja-JP")}`} />
         <KpiCard
           theme={theme}
           label="満期で増える額"
@@ -78,6 +87,7 @@ export default function DashboardPage() {
               goalProgress={
                 active ? Math.min(100, Math.round((active.current / active.target) * 100)) : 0
               }
+              weeklyHistory={weeklyHistory[key]}
             />
           );
         })}

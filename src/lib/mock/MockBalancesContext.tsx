@@ -11,6 +11,10 @@ import { ThemeKey } from "@/lib/theme/themes";
 export type AccountKind = "spend" | "save" | "grow";
 type Balances = { spend: number; save: number; grow: number };
 type TransferResult = { ok: true } | { ok: false; error: string };
+// 曜日インデックス(0=日..6=土)別の「ためる」への累積額。
+// セッション開始からの簡易集計であり、カレンダー週の境界リセットや
+// 永続化は行わない。本実装ではtransactionsテーブルからの集計に置き換える。
+type WeeklyHistory = number[];
 
 const INITIAL_BALANCES: Record<ThemeKey, Balances> = {
   rei_blue: { spend: 1200, save: 5400, grow: 3000 },
@@ -18,8 +22,15 @@ const INITIAL_BALANCES: Record<ThemeKey, Balances> = {
   parent_dark: { spend: 0, save: 0, grow: 0 },
 };
 
+const INITIAL_WEEKLY_HISTORY: Record<ThemeKey, WeeklyHistory> = {
+  rei_blue: [0, 0, 0, 0, 0, 0, 0],
+  jun_red: [0, 0, 0, 0, 0, 0, 0],
+  parent_dark: [0, 0, 0, 0, 0, 0, 0],
+};
+
 type MockBalancesContextValue = {
   balances: Record<ThemeKey, Balances>;
+  weeklyHistory: Record<ThemeKey, WeeklyHistory>;
   mockTransfer: (
     theme: ThemeKey,
     from: AccountKind,
@@ -40,6 +51,8 @@ export function MockBalancesProvider({
 }) {
   const [balances, setBalances] =
     useState<Record<ThemeKey, Balances>>(INITIAL_BALANCES);
+  const [weeklyHistory, setWeeklyHistory] =
+    useState<Record<ThemeKey, WeeklyHistory>>(INITIAL_WEEKLY_HISTORY);
 
   function mockTransfer(
     theme: ThemeKey,
@@ -64,6 +77,16 @@ export function MockBalancesProvider({
         [to]: prev[theme][to] + amount,
       },
     }));
+
+    if (to === "save") {
+      const dayIndex = new Date().getDay();
+      setWeeklyHistory((prev) => {
+        const next = [...prev[theme]];
+        next[dayIndex] += amount;
+        return { ...prev, [theme]: next };
+      });
+    }
+
     return { ok: true };
   }
 
@@ -76,7 +99,9 @@ export function MockBalancesProvider({
   }
 
   return (
-    <MockBalancesContext.Provider value={{ balances, mockTransfer, creditReward }}>
+    <MockBalancesContext.Provider
+      value={{ balances, weeklyHistory, mockTransfer, creditReward }}
+    >
       {children}
     </MockBalancesContext.Provider>
   );

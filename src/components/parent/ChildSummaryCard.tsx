@@ -2,6 +2,8 @@ import { ChildTheme } from "@/lib/theme/childTheme";
 
 type Boxes = { spend: number; save: number; grow: number };
 
+const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
 export function ChildSummaryCard({
   theme,
   name,
@@ -9,6 +11,7 @@ export function ChildSummaryCard({
   boxes,
   goalName,
   goalProgress,
+  weeklyHistory,
 }: {
   theme: ChildTheme;
   name: string;
@@ -16,6 +19,7 @@ export function ChildSummaryCard({
   boxes: Boxes;
   goalName: string;
   goalProgress: number;
+  weeklyHistory: number[];
 }) {
   const fmt = (n: number) => new Intl.NumberFormat("ja-JP").format(n);
 
@@ -62,13 +66,34 @@ export function ChildSummaryCard({
           <div style={{ fontSize: 11, color: theme.sub, marginBottom: 4 }}>
             目標：{goalName}　達成 {goalProgress}%
           </div>
-          <div style={{ height: 8, borderRadius: 4, background: theme.progressTrack, overflow: "hidden" }}>
+          <div style={{ height: 8, borderRadius: 4, background: theme.progressTrack, overflow: "hidden", marginBottom: 12 }}>
             <div
               style={{ height: "100%", width: `${goalProgress}%`, background: theme.progressFill }}
             />
           </div>
         </>
       )}
+
+      <div style={{ fontSize: 11, color: theme.sub, marginBottom: 4 }}>今週ためた額</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 36 }}>
+        {weeklyHistory.map((amount, i) => {
+          const max = Math.max(1, ...weeklyHistory);
+          const height = Math.max(2, Math.round((amount / max) * 32));
+          return (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <div
+                style={{
+                  width: "100%",
+                  height,
+                  borderRadius: 2,
+                  background: amount > 0 ? theme.accent : theme.progressTrack,
+                }}
+              />
+              <span style={{ fontSize: 8, color: theme.sub }}>{DAY_LABELS[i]}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
