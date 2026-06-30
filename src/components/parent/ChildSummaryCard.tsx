@@ -25,7 +25,10 @@ export function ChildSummaryCard({
   goalProgress: number;
   weeklyHistory: number[];
   avatarUrl?: string | null;
-  onSpend: (amount: number, memo: string) => { ok: true } | { ok: false; error: string };
+  onSpend: (
+    amount: number,
+    memo: string,
+  ) => { ok: true } | { ok: false; error: string } | Promise<{ ok: true } | { ok: false; error: string }>;
 }) {
   const fmt = (n: number) => new Intl.NumberFormat("ja-JP").format(n);
   const [showSpendForm, setShowSpendForm] = useState(false);

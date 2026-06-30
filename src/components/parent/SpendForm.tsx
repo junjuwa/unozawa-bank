@@ -8,15 +8,18 @@ export function SpendForm({
   onSubmit,
 }: {
   theme: ChildTheme;
-  onSubmit: (amount: number, memo: string) => { ok: true } | { ok: false; error: string };
+  onSubmit: (
+    amount: number,
+    memo: string,
+  ) => { ok: true } | { ok: false; error: string } | Promise<{ ok: true } | { ok: false; error: string }>;
 }) {
   const [amount, setAmount] = useState(0);
   const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  function handleSubmit() {
-    const result = onSubmit(amount, memo);
+  async function handleSubmit() {
+    const result = await onSubmit(amount, memo);
     if (!result.ok) {
       setError(result.error);
       setDone(false);

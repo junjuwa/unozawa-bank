@@ -2,12 +2,18 @@
 
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
+import { useSpendHistory } from "@/hooks/useTransactions";
 import { childThemes } from "@/lib/theme/childTheme";
 
 export default function HistoryPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
-  const records = useMockBalances().spendHistory[themeKey];
+
+  const { records: realRecords } = useSpendHistory();
+  const mockRecords = useMockBalances().spendHistory[themeKey];
+  const records = realRecords
+    ? realRecords.map((r) => ({ id: r.id, amount: r.amount, memo: r.memo ?? "", createdAt: r.created_at }))
+    : mockRecords;
 
   return (
     <div className="flex flex-col gap-4 pt-2">
