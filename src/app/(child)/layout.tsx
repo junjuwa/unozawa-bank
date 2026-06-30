@@ -2,6 +2,7 @@
 
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
+import { useMockAvatars } from "@/lib/mock/MockAvatarsContext";
 import { ChildHeader } from "@/components/child/ChildHeader";
 import { BottomNav } from "@/components/child/BottomNav";
 import { SideNav } from "@/components/child/SideNav";
@@ -19,6 +20,7 @@ export default function ChildLayout({
   const name = THEME_LABELS[themeKey].split("（")[0];
   const balances = useMockBalances().balances[themeKey];
   const total = balances.spend + balances.save + balances.grow;
+  const avatarUrl = useMockAvatars().avatars[themeKey];
   const layoutMode = useChildLayoutMode();
   const isSide = layoutMode === "side";
 
@@ -33,7 +35,7 @@ export default function ChildLayout({
     >
       {isSide && <SideNav theme={theme} />}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <ChildHeader theme={theme} name={name} total={total}>
+        <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl}>
           <ThemeToggleMock value={themeKey} onChange={setTheme} />
         </ChildHeader>
         <main

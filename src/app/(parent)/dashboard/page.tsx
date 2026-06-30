@@ -4,6 +4,7 @@ import { childThemes } from "@/lib/theme/childTheme";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useMockJobs } from "@/lib/mock/MockJobsContext";
 import { useMockSettings } from "@/lib/mock/MockSettingsContext";
+import { useMockAvatars } from "@/lib/mock/MockAvatarsContext";
 import { getGoalsList } from "@/lib/mock/goalsList";
 import { INVEST_LOTS } from "@/lib/mock/investLots";
 import { THEME_LABELS } from "@/lib/theme/themes";
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const { balances, weeklyHistory } = useMockBalances();
   const { jobs } = useMockJobs();
   const { settings } = useMockSettings();
+  const { avatars } = useMockAvatars();
 
   function catalogName(catalogId: string) {
     return settings.jobCatalog.find((c) => c.id === catalogId)?.name ?? catalogId;
@@ -88,6 +90,7 @@ export default function DashboardPage() {
                 active ? Math.min(100, Math.round((active.current / active.target) * 100)) : 0
               }
               weeklyHistory={weeklyHistory[key]}
+              avatarUrl={avatars[key]}
             />
           );
         })}

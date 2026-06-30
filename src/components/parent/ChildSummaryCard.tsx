@@ -12,6 +12,7 @@ export function ChildSummaryCard({
   goalName,
   goalProgress,
   weeklyHistory,
+  avatarUrl,
 }: {
   theme: ChildTheme;
   name: string;
@@ -20,6 +21,7 @@ export function ChildSummaryCard({
   goalName: string;
   goalProgress: number;
   weeklyHistory: number[];
+  avatarUrl?: string | null;
 }) {
   const fmt = (n: number) => new Intl.NumberFormat("ja-JP").format(n);
 
@@ -46,9 +48,15 @@ export function ChildSummaryCard({
               fontWeight: 900,
               fontSize: 14,
               color: "#fff",
+              overflow: "hidden",
             }}
           >
-            {name.slice(0, 1)}
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- モックのdata URL表示のため
+              <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              name.slice(0, 1)
+            )}
           </span>
           <span style={{ fontWeight: 800, color: theme.ink }}>{name}</span>
         </div>

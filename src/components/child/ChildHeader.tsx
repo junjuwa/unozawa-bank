@@ -5,10 +5,11 @@ type ChildHeaderProps = {
   theme: ChildTheme;
   name: string;
   total: number;
+  avatarUrl?: string | null;
   children?: React.ReactNode;
 };
 
-export function ChildHeader({ theme, name, total, children }: ChildHeaderProps) {
+export function ChildHeader({ theme, name, total, avatarUrl, children }: ChildHeaderProps) {
   return (
     <header
       style={{
@@ -37,9 +38,15 @@ export function ChildHeader({ theme, name, total, children }: ChildHeaderProps) 
             fontSize: 20,
             color: theme.accentInk,
             flexShrink: 0,
+            overflow: "hidden",
           }}
         >
-          {name.slice(0, 1)}
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- モックのdata URL表示のため
+            <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            name.slice(0, 1)
+          )}
         </div>
         <div>
           <div style={{ fontWeight: theme.headingWeight, fontSize: 18 }}>{name}</div>
