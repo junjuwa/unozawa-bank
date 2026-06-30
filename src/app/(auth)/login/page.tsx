@@ -21,7 +21,10 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
 
-  async function handleSignInWithPasskey() {
+  // signInWithPasskey()自体はdiscoverable credential方式でユーザーを特定しないため、
+  // タップしたタイルと実際に認証されたプロフィールのtheme_keyが一致するかをここで検証する
+  // （一致しなければ別の子のパスキーが使われたとみなしサインアウトする）。
+  async function handleSignInWithPasskey(tappedThemeKey: "rei_blue" | "jun_red") {
     setSigningIn(true);
     setError(null);
     const { data, error: signInError } = await signInWithPasskey();
@@ -37,13 +40,22 @@ export default function LoginPage() {
       .select("role, theme_key")
       .eq("id", data.user.id)
       .single();
-    setSigningIn(false);
 
     if (profileError || !profile || profile.role !== "child") {
+      setSigningIn(false);
+      await supabase.auth.signOut();
       setError("子のプロフィールが見つかりませんでした");
       return;
     }
 
+    if (profile.theme_key !== tappedThemeKey) {
+      setSigningIn(false);
+      await supabase.auth.signOut();
+      setError("ちがう ひとの パスキーです。もう一度えらんでください");
+      return;
+    }
+
+    setSigningIn(false);
     // 残高等のデータは引き続きモックのため、テーマだけ実プロフィールに同期する
     setTheme(profile.theme_key as ThemeKey);
     router.push("/home");
@@ -70,14 +82,14 @@ export default function LoginPage() {
           emoji="🌺"
           avatarUrl={avatars.rei_blue}
           label="れい"
-          onClick={handleSignInWithPasskey}
+          onClick={() => handleSignInWithPasskey("rei_blue")}
         />
         <AuthTile
           theme={childThemes.jun_red}
           emoji="🦸"
           avatarUrl={avatars.jun_red}
           label="じゅん"
-          onClick={handleSignInWithPasskey}
+          onClick={() => handleSignInWithPasskey("jun_red")}
         />
         <AuthTile theme={theme} emoji="👨" label="おとうさん" onClick={() => router.push("/parent-login")} />
       </div>

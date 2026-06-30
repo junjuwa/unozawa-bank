@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { childThemes } from "@/lib/theme/childTheme";
 import { createClient } from "@/lib/supabase/client";
 
@@ -44,6 +45,12 @@ export default function ParentLoginPage() {
         color: theme.ink,
       }}
     >
+      <Link
+        href="/login"
+        style={{ fontSize: 12, color: theme.sub, marginBottom: 12, alignSelf: "flex-start", maxWidth: 320, width: "100%" }}
+      >
+        ← だれですか？にもどる
+      </Link>
       <h1 style={{ fontWeight: 800, fontSize: 20, marginBottom: 20 }}>おや ログイン</h1>
       <form
         onSubmit={handleSubmit}
