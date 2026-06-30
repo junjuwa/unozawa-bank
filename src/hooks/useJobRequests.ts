@@ -55,6 +55,7 @@ export function useMyJobRequests() {
 export function useFamilyJobRequests() {
   const [requests, setRequests] = useState<FamilyJobRequest[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [debugError, setDebugError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     const supabase = createClient();
@@ -68,11 +69,12 @@ export function useFamilyJobRequests() {
     const { data, error } = await supabase.rpc("get_family_job_requests");
 
     if (error) {
-      // forbidden = 親プロフィール未設定などの場合。空配列にしてモックへフォールバックさせない。
+      setDebugError(`RPC error: ${error.message} (code: ${error.code})`);
       setRequests([]);
       setLoading(false);
       return;
     }
+    setDebugError(null);
 
     // RPCの戻り値をFamilyJobRequest型に変換
     const rows = (data ?? []).map((r: {
@@ -99,5 +101,5 @@ export function useFamilyJobRequests() {
     refetch();
   }, [refetch]);
 
-  return { requests, loading, refetch };
+  return { requests, loading, refetch, debugError };
 }

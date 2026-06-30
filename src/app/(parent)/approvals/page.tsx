@@ -18,7 +18,7 @@ export default function ApprovalsPage() {
   const { jobs, decideJob } = useMockJobs();
   const { creditReward } = useMockBalances();
   const { settings } = useMockSettings();
-  const { requests, loading: requestsLoading, refetch } = useFamilyJobRequests();
+  const { requests, loading: requestsLoading, refetch, debugError } = useFamilyJobRequests();
   const [filter, setFilter] = useState<"all" | ThemeKey>("all");
 
   // 30秒ごとに自動更新（子が申請後に親が更新ボタンを押さなくても反映される）
@@ -54,6 +54,11 @@ export default function ApprovalsPage() {
 
     return (
       <div className="flex flex-col gap-5 pt-2">
+        {debugError && (
+          <p style={{ fontSize: 11, color: "#E26D62", background: "#2a1a1a", borderRadius: 8, padding: "6px 10px", marginBottom: 8, wordBreak: "break-all" }}>
+            🔍 DEBUG: {debugError}
+          </p>
+        )}
         <div className="flex gap-2 items-center">
           {(["all", ...CHILDREN] as const).map((key) => (
             <button
