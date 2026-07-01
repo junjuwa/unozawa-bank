@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { PinGate } from "@/components/ui/PinGate";
 import { UserSwitchModal, SwitchUser } from "@/components/ui/UserSwitchModal";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ParentLayout({
@@ -103,6 +104,7 @@ export default function ParentLayout({
         {children}
       </main>
       <ParentBottomNav theme={theme} />
+      <PullToRefresh />
 
       {showSwitch && (
         <UserSwitchModal

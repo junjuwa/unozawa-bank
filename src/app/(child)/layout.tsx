@@ -16,6 +16,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { FrameDecoration } from "@/components/child/FrameDecoration";
 import { PinGate } from "@/components/ui/PinGate";
 import { UserSwitchModal, SwitchUser } from "@/components/ui/UserSwitchModal";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import { useEffect } from "react";
 import { ThemeKey } from "@/lib/theme/themes";
 
@@ -89,31 +90,13 @@ export default function ChildLayout({
       <FrameDecoration themeKey={themeKey} />
       {isSide && <SideNav theme={theme} />}
       <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
-        <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl}>
-          {canSwitch && (
-            <button
-              type="button"
-              onClick={() => setShowSwitch(true)}
-              style={{
-                marginLeft: 8,
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                border: "1.5px solid rgba(255,255,255,.25)",
-                background: "rgba(255,255,255,.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                fontSize: 18,
-                flexShrink: 0,
-              }}
-              title="ユーザきりかえ"
-            >
-              🔄
-            </button>
-          )}
-        </ChildHeader>
+        <ChildHeader
+          theme={theme}
+          name={name}
+          total={total}
+          avatarUrl={avatarUrl}
+          onSwitchUser={canSwitch ? () => setShowSwitch(true) : undefined}
+        />
         <main
           className={isSide ? "px-4" : "pb-28 px-4"}
           style={{ maxWidth: 720, margin: "0 auto" }}
@@ -122,6 +105,7 @@ export default function ChildLayout({
         </main>
       </div>
       {!isSide && <BottomNav theme={theme} />}
+      <PullToRefresh />
 
       {showSwitch && (
         <UserSwitchModal

@@ -5,10 +5,10 @@ type ChildHeaderProps = {
   name: string;
   total: number;
   avatarUrl?: string | null;
-  children?: React.ReactNode;
+  onSwitchUser?: () => void;
 };
 
-export function ChildHeader({ theme, name, total, avatarUrl, children }: ChildHeaderProps) {
+export function ChildHeader({ theme, name, total, avatarUrl, onSwitchUser }: ChildHeaderProps) {
   return (
     <header
       style={{
@@ -20,31 +20,58 @@ export function ChildHeader({ theme, name, total, avatarUrl, children }: ChildHe
         gap: 8,
       }}
     >
-      {/* 左：アバター＋名前 */}
+      {/* 左：アバター（タップでユーザ切り替え）＋名前 */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-        <div
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: theme.cardRadius >= 20 ? "50%" : 10,
-            background: theme.cardBg,
-            border: theme.cardBorder !== "none" ? theme.cardBorder : "2.5px solid rgba(255,255,255,.7)",
-            boxShadow: theme.cardShadow,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 900,
-            fontSize: 17,
-            color: theme.accentInk,
-            flexShrink: 0,
-            overflow: "hidden",
-          }}
-        >
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- data URL or remote URL
-            <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            name.slice(0, 1)
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <div
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: theme.cardRadius >= 20 ? "50%" : 10,
+              background: theme.cardBg,
+              border: theme.cardBorder !== "none" ? theme.cardBorder : "2.5px solid rgba(255,255,255,.7)",
+              boxShadow: theme.cardShadow,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 900,
+              fontSize: 17,
+              color: theme.accentInk,
+              overflow: "hidden",
+              cursor: onSwitchUser ? "pointer" : "default",
+            }}
+            onClick={onSwitchUser}
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- data URL or remote URL
+              <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              name.slice(0, 1)
+            )}
+          </div>
+          {/* きりかえバッジ */}
+          {onSwitchUser && (
+            <div
+              onClick={onSwitchUser}
+              style={{
+                position: "absolute",
+                bottom: -4,
+                right: -4,
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,.92)",
+                border: "1.5px solid rgba(255,255,255,.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 10,
+                cursor: "pointer",
+                boxShadow: "0 1px 4px rgba(0,0,0,.2)",
+              }}
+            >
+              🔄
+            </div>
           )}
         </div>
         <div
@@ -61,7 +88,7 @@ export function ChildHeader({ theme, name, total, avatarUrl, children }: ChildHe
         </div>
       </div>
 
-      {/* 右：もってる金額パネル（コントラスト確保） */}
+      {/* 右：もってる金額パネル */}
       <div
         style={{
           background: "rgba(255,255,255,0.92)",
@@ -79,9 +106,6 @@ export function ChildHeader({ theme, name, total, avatarUrl, children }: ChildHe
           ¥{new Intl.NumberFormat("ja-JP").format(total)}
         </span>
       </div>
-
-      {/* きりかえボタン等のスロット */}
-      {children}
     </header>
   );
 }
