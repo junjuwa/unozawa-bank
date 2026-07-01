@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { childThemes } from "@/lib/theme/childTheme";
 import { createClient } from "@/lib/supabase/client";
 import { signInWithPasskey } from "@/lib/auth/passkey";
 
 export default function ParentLoginPage() {
-  const router = useRouter();
   const theme = childThemes.parent_dark;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +28,7 @@ export default function ParentLoginPage() {
       setError(signInError.message);
       return;
     }
-    router.push("/dashboard");
+    window.location.replace("/dashboard");
   }
 
   // /loginの子フローと同じ防御方針：認証後にrole==='parent'を確認し、
@@ -59,7 +57,7 @@ export default function ParentLoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    window.location.replace("/dashboard");
   }
 
   return (

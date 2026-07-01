@@ -58,7 +58,9 @@ export default function LoginPage() {
     setSigningIn(false);
     // 残高等のデータは引き続きモックのため、テーマだけ実プロフィールに同期する
     setTheme(profile.theme_key as ThemeKey);
-    router.push("/home");
+    // iOS PWA standalone モードでは WebAuthn 後の router.push() が Safari を開くことがある。
+    // window.location.replace() で同一 WebView 内のハードナビゲーションにする。
+    window.location.replace("/home");
   }
 
   return (
