@@ -30,7 +30,7 @@ export default function HomePage() {
     ? ("image_url" in activeGoal ? activeGoal.image_url ?? undefined : activeGoal.imageUrl)
     : undefined;
   const otherCount = childGoals.length - (activeGoal ? 1 : 0);
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const mockMascotUrl = useMockMascot().mascots[themeKey];
   // 実ログイン済みかつtheme_keyが一致すれば実DBのmascot_urlを優先
   const mascotImageUrl =
@@ -38,7 +38,7 @@ export default function HomePage() {
       ? ((profile as { mascot_url?: string | null }).mascot_url ?? mockMascotUrl)
       : mockMascotUrl;
 
-  if (accountsLoading || goalsLoading) return <LoadingScreen />;
+  if (accountsLoading || goalsLoading || profileLoading) return <LoadingScreen />;
 
   return (
     <div className="flex flex-col gap-4 pt-2">
