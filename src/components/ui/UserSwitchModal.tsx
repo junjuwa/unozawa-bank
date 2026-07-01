@@ -9,6 +9,15 @@ export type SwitchUser = {
   avatarUrl?: string | null;
   destinationPath: string;
   hasPin: boolean;
+  themeKey?: string | null;
+  role?: string;
+};
+
+// テーマキーごとの背景色・文字色
+const THEME_COLORS: Record<string, { bg: string; fg: string }> = {
+  rei_blue: { bg: "#4BA3D9", fg: "#fff" },
+  jun_red:  { bg: "#E24A4A", fg: "#fff" },
+  parent_dark: { bg: "#3D4D5C", fg: "#fff" },
 };
 
 type Props = {
@@ -17,23 +26,25 @@ type Props = {
   onClose: () => void;
 };
 
-function AvatarCircle({ name, avatarUrl, size = 52 }: { name: string; avatarUrl?: string | null; size?: number }) {
+function AvatarCircle({ name, avatarUrl, size = 52, themeKey }: { name: string; avatarUrl?: string | null; size?: number; themeKey?: string | null }) {
+  const colors = THEME_COLORS[themeKey ?? ""] ?? { bg: "#2A3340", fg: "#fff" };
   return (
     <div
       style={{
         width: size,
         height: size,
         borderRadius: "50%",
-        background: "#2A3340",
-        border: "2.5px solid #3A424C",
+        background: colors.bg,
+        border: "2.5px solid rgba(255,255,255,.25)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontWeight: 900,
         fontSize: size * 0.38,
-        color: "#fff",
+        color: colors.fg,
         flexShrink: 0,
         overflow: "hidden",
+        fontFamily: "'Zen Maru Gothic', system-ui",
       }}
     >
       {avatarUrl ? (
@@ -156,7 +167,7 @@ export function UserSwitchModal({ currentProfileId, users, onClose }: Props) {
                     textAlign: "left",
                   }}
                 >
-                  <AvatarCircle name={u.label} avatarUrl={u.avatarUrl} size={48} />
+                  <AvatarCircle name={u.label} avatarUrl={u.avatarUrl} size={48} themeKey={u.themeKey} />
                   <span style={{ flex: 1 }}>{u.label}</span>
                   {!u.hasPin && (
                     <span style={{ fontSize: 11, color: "#9AA3B0", fontWeight: 600 }}>PINなし</span>
@@ -194,7 +205,7 @@ export function UserSwitchModal({ currentProfileId, users, onClose }: Props) {
               ← もどる
             </button>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 6 }}>
-              <AvatarCircle name={target.label} avatarUrl={target.avatarUrl} size={64} />
+              <AvatarCircle name={target.label} avatarUrl={target.avatarUrl} size={64} themeKey={target.themeKey} />
               <h2 style={{ fontWeight: 900, fontSize: 18, marginTop: 10 }}>{target.label} の PIN</h2>
             </div>
 

@@ -36,6 +36,8 @@ export default function ParentLayout({
     avatarUrl: m.avatar_url,
     destinationPath: m.role === "parent" ? "/dashboard" : "/home",
     hasPin: m.has_pin,
+    themeKey: m.theme_key,
+    role: m.role,
   }));
   const canSwitch = !!userId && switchUsers.filter((u) => u.profileId !== userId).length > 0;
 
