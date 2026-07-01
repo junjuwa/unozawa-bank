@@ -204,9 +204,9 @@ function Step4({ onNext, onBack, step }: SlideProps) {
       </div>
       <div className="ob-body">
         <Dots active={step} />
-        <h2 className="ob-title">ふやすと おかねが ふえる</h2>
+        <h2 className="ob-title">あずけると おかねが ふえる</h2>
         <p className="ob-desc">
-          はこに おかねを あずけると、<ruby>何回<rt>なんかい</rt></ruby> か ねると すこし ふえて <ruby>返<rt>かえ</rt></ruby>って くるよ。<ruby>待<rt>ま</rt></ruby>って みよう！
+          「ふやす」に おかねを あずけると、しばらく たったら すこし ふえて <ruby>返<rt>かえ</rt></ruby>って くるよ。<ruby>待<rt>ま</rt></ruby>つのも たのしいよ！
         </p>
         <button className="ob-btn" type="button" onClick={onNext}>つぎへ <ArrowSvg /></button>
       </div>
