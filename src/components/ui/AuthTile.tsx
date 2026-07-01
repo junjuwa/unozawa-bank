@@ -18,7 +18,7 @@ export function AuthTile({
       onClick={onClick}
       style={{
         background: theme.cardBg,
-        borderRadius: theme.cardRadius,
+        borderRadius: 20,
         border: theme.cardBorder,
         boxShadow: theme.cardShadow,
         padding: "28px 16px",
