@@ -1,28 +1,45 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { childThemes } from "@/lib/theme/childTheme";
 import { ParentBottomNav } from "@/components/parent/ParentBottomNav";
 import { useProfile } from "@/hooks/useProfile";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { PinGate } from "@/components/ui/PinGate";
+import { UserSwitchModal, SwitchUser } from "@/components/ui/UserSwitchModal";
 import { createClient } from "@/lib/supabase/client";
+
+const THEME_EMOJI: Record<string, string> = { rei_blue: "🌊", jun_red: "🔥" };
 
 export default function ParentLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const theme = childThemes.parent_dark;
   const { profile, loading: profileLoading } = useProfile();
+  const { members } = useFamilyMembers();
   const router = useRouter();
   const displayName =
     typeof profile?.display_name === "string" ? profile.display_name : "おとうさん";
   const userId = (profile as { id?: string } | null)?.id ?? null;
   const hasPinHash = !!(profile as { pin_hash?: string | null } | null)?.pin_hash;
+  const [showSwitch, setShowSwitch] = useState(false);
 
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/parent-login");
   }
+
+  const switchUsers: SwitchUser[] = (members ?? [])
+    .filter((m) => m.pin_hash)
+    .map((m) => ({
+      profileId: m.id,
+      label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
+      emoji: m.role === "parent" ? "👔" : (THEME_EMOJI[m.theme_key ?? ""] ?? "👦"),
+      destinationPath: m.role === "parent" ? "/dashboard" : "/home",
+    }));
+  const canSwitch = !!userId && switchUsers.filter((u) => u.profileId !== userId).length > 0;
 
   return (
     <PinGate userId={userId} hasPinHash={hasPinHash} profileLoading={profileLoading} userName={displayName} accentColor={theme.accent}>
@@ -46,25 +63,57 @@ export default function ParentLayout({
           <img src="/brand/logo-lockup-dark.svg" alt="UNOZAWA BANK" style={{ height: 36, width: "auto" }} />
           <div style={{ fontSize: 11, color: theme.sub, paddingLeft: 2 }}>{displayName}</div>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: theme.sub,
-            border: "1px solid #3A424C",
-            borderRadius: 14,
-            padding: "6px 12px",
-          }}
-        >
-          ログアウト
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {canSwitch && (
+            <button
+              type="button"
+              onClick={() => setShowSwitch(true)}
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: theme.sub,
+                border: "1px solid #3A424C",
+                borderRadius: 14,
+                padding: "6px 12px",
+                background: "none",
+                cursor: "pointer",
+                fontFamily: theme.fontFamily,
+              }}
+            >
+              🔄 きりかえ
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: theme.sub,
+              border: "1px solid #3A424C",
+              borderRadius: 14,
+              padding: "6px 12px",
+              background: "none",
+              cursor: "pointer",
+              fontFamily: theme.fontFamily,
+            }}
+          >
+            ログアウト
+          </button>
+        </div>
       </header>
       <main className="pb-28 px-4" style={{ maxWidth: 720, margin: "0 auto" }}>
         {children}
       </main>
       <ParentBottomNav theme={theme} />
+
+      {showSwitch && (
+        <UserSwitchModal
+          currentProfileId={userId}
+          users={switchUsers}
+          onClose={() => setShowSwitch(false)}
+        />
+      )}
     </div>
     </PinGate>
   );

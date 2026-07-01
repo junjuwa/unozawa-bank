@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMockChildTheme } from "@/lib/theme/MockChildThemeContext";
 import { useMockBalances } from "@/lib/mock/MockBalancesContext";
 import { useMockAvatars } from "@/lib/mock/MockAvatarsContext";
@@ -11,10 +12,17 @@ import { childThemes } from "@/lib/theme/childTheme";
 import { useChildLayoutMode } from "@/lib/layout/useChildLayoutMode";
 import { useProfile } from "@/hooks/useProfile";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { FrameDecoration } from "@/components/child/FrameDecoration";
 import { PinGate } from "@/components/ui/PinGate";
+import { UserSwitchModal, SwitchUser } from "@/components/ui/UserSwitchModal";
 import { useEffect } from "react";
 import { ThemeKey } from "@/lib/theme/themes";
+
+const THEME_EMOJI: Record<string, string> = {
+  rei_blue: "🌊",
+  jun_red:  "🔥",
+};
 
 export default function ChildLayout({
   children,
@@ -22,6 +30,8 @@ export default function ChildLayout({
   const { theme: themeKey, setTheme } = useMockChildTheme();
   const theme = childThemes[themeKey];
   const { profile, loading: profileLoading } = useProfile();
+  const [showSwitch, setShowSwitch] = useState(false);
+  const { members } = useFamilyMembers();
 
   // 実ログイン済みの場合はプロフィールのtheme_keyに合わせてテーマを自動切替
   useEffect(() => {
@@ -38,11 +48,9 @@ export default function ChildLayout({
       : THEME_LABELS[themeKey].split("（")[0];
   const { accounts } = useAccounts();
   const mockBalances = useMockBalances().balances[themeKey];
-  // 実ログイン済みならaccountsをそのまま使う（useAccountsは自分のアカウントのみ取得）
   const balances = accounts ?? mockBalances;
   const total = balances.spend + balances.save + balances.grow;
   const mockAvatarUrl = useMockAvatars().avatars[themeKey];
-  // 実ログイン済みかつtheme_keyが一致すればDBのavatar_urlを優先、それ以外はモックにフォールバック
   const realAvatarUrl =
     profile && (profile as { theme_key?: string; avatar_url?: string | null }).theme_key === themeKey
       ? ((profile as { avatar_url?: string | null }).avatar_url ?? null)
@@ -53,6 +61,18 @@ export default function ChildLayout({
 
   const userId = (profile as { id?: string } | null)?.id ?? null;
   const hasPinHash = !!(profile as { pin_hash?: string | null } | null)?.pin_hash;
+
+  // 切り替え候補リストを組み立て（実ログイン時のみ表示）
+  const switchUsers: SwitchUser[] = (members ?? [])
+    .filter((m) => m.pin_hash) // PINが設定されているメンバーのみ
+    .map((m) => ({
+      profileId: m.id,
+      label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
+      emoji: m.role === "parent" ? "👔" : (THEME_EMOJI[m.theme_key ?? ""] ?? "👦"),
+      destinationPath: m.role === "parent" ? "/dashboard" : "/home",
+    }));
+
+  const canSwitch = !!userId && switchUsers.filter((u) => u.profileId !== userId).length > 0;
 
   return (
     <PinGate
@@ -75,7 +95,31 @@ export default function ChildLayout({
       <FrameDecoration themeKey={themeKey} />
       {isSide && <SideNav theme={theme} />}
       <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
-        <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl} />
+        <ChildHeader theme={theme} name={name} total={total} avatarUrl={avatarUrl}>
+          {canSwitch && (
+            <button
+              type="button"
+              onClick={() => setShowSwitch(true)}
+              style={{
+                marginLeft: 8,
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                border: "1.5px solid rgba(255,255,255,.25)",
+                background: "rgba(255,255,255,.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: 18,
+                flexShrink: 0,
+              }}
+              title="ユーザきりかえ"
+            >
+              🔄
+            </button>
+          )}
+        </ChildHeader>
         <main
           className={isSide ? "px-4" : "pb-28 px-4"}
           style={{ maxWidth: 720, margin: "0 auto" }}
@@ -84,6 +128,14 @@ export default function ChildLayout({
         </main>
       </div>
       {!isSide && <BottomNav theme={theme} />}
+
+      {showSwitch && (
+        <UserSwitchModal
+          currentProfileId={userId}
+          users={switchUsers}
+          onClose={() => setShowSwitch(false)}
+        />
+      )}
     </div>
     </PinGate>
   );
