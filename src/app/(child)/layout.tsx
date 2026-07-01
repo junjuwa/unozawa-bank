@@ -30,11 +30,13 @@ export default function ChildLayout({
   const { members } = useFamilyMembers();
 
   // 実ログイン済みの場合はプロフィールのtheme_keyに合わせてテーマを自動切替
+  // あわせてavatar_urlをlocalStorageにキャッシュ → /loginで未ログイン時に表示
   useEffect(() => {
-    const profileTheme = (profile as { theme_key?: string } | null)?.theme_key;
-    if (profileTheme && profileTheme !== themeKey) {
-      setTheme(profileTheme as ThemeKey);
-    }
+    const p = profile as { theme_key?: string; avatar_url?: string | null } | null;
+    if (!p?.theme_key) return;
+    if (p.theme_key !== themeKey) setTheme(p.theme_key as ThemeKey);
+    const key = `login_avatar_${p.theme_key}`;
+    if (p.avatar_url) localStorage.setItem(key, p.avatar_url);
   }, [profile, themeKey, setTheme]);
 
   // 実ログイン済みかつtheme_keyが一致する場合のみ実名を使う

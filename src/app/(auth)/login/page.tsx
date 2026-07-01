@@ -21,6 +21,11 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
 
+  // localStorageキャッシュ（前回ログイン時に保存）→ なければmockにフォールバック
+  function getCachedAvatar(themeKey: string): string | null {
+    try { return localStorage.getItem(`login_avatar_${themeKey}`) || null; } catch { return null; }
+  }
+
   // signInWithPasskey()自体はdiscoverable credential方式でユーザーを特定しないため、
   // タップしたタイルと実際に認証されたプロフィールのtheme_keyが一致するかをここで検証する
   // （一致しなければ別の子のパスキーが使われたとみなしサインアウトする）。
@@ -82,13 +87,13 @@ export default function LoginPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 320 }}>
         <AuthTile
           theme={childThemes.rei_blue}
-          avatarUrl={avatars.rei_blue}
+          avatarUrl={getCachedAvatar("rei_blue") ?? avatars.rei_blue}
           label="れい"
           onClick={() => handleSignInWithPasskey("rei_blue")}
         />
         <AuthTile
           theme={childThemes.jun_red}
-          avatarUrl={avatars.jun_red}
+          avatarUrl={getCachedAvatar("jun_red") ?? avatars.jun_red}
           label="じゅん"
           onClick={() => handleSignInWithPasskey("jun_red")}
         />
