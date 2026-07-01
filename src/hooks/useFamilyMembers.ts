@@ -22,7 +22,7 @@ export function useFamilyMembers() {
       if (!user) { setLoading(false); return; }
 
       const { data, error } = await supabase.rpc("get_family_members");
-      if (error) { console.error("get_family_members:", error); }
+      console.log("[useFamilyMembers] user:", user.id, "data:", data, "error:", error);
 
       if (!cancelled) {
         setMembers((data ?? []) as FamilyMember[]);
