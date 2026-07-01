@@ -6,8 +6,8 @@ export type FamilyMember = {
   display_name: string;
   role: "parent" | "child";
   theme_key: string | null;
-  pin_hash: string | null;
   avatar_url: string | null;
+  has_pin: boolean;
 };
 
 export function useFamilyMembers() {
@@ -21,17 +21,8 @@ export function useFamilyMembers() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("family_id")
-        .eq("id", user.id)
-        .single();
-      if (!me) { setLoading(false); return; }
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, role, theme_key, pin_hash, avatar_url")
-        .eq("family_id", me.family_id);
+      const { data, error } = await supabase.rpc("get_family_members");
+      if (error) { console.error("get_family_members:", error); }
 
       if (!cancelled) {
         setMembers((data ?? []) as FamilyMember[]);

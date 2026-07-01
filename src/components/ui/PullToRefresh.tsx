@@ -33,7 +33,7 @@ export function PullToRefresh() {
       startY.current = null;
       if (pullY >= THRESHOLD - 2) {
         setRefreshing(true);
-        setTimeout(() => window.location.reload(), 300);
+        window.location.reload();
       } else {
         setPullY(0);
       }

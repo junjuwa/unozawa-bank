@@ -64,7 +64,7 @@ export default function ChildLayout({
     label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
     avatarUrl: m.avatar_url,
     destinationPath: m.role === "parent" ? "/dashboard" : "/home",
-    hasPin: !!m.pin_hash,
+    hasPin: m.has_pin,
   }));
 
   const canSwitch = !!userId && switchUsers.filter((u) => u.profileId !== userId).length > 0;
