@@ -1,0 +1,143 @@
+/* =========================================================================
+   UNOZAWA BANK — オンボーディング・モーダル 共有スタイル
+   使い方: この onboarding.css を読み込み、各 step-N-*.html の
+   <div class="ob-modal"> ... </div> をそのまま画面に差し込む。
+   フォント: Zen Maru Gothic（下記 @import か <link> で読み込み）
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
+
+:root{
+  --ob-ink:#1B3A6B;      /* 主テキスト（濃いネイビー） */
+  --ob-sub:#2c6f96;      /* サブテキスト */
+  --ob-cor:#FF7E6B;      /* 差し色コーラル（ボタン等） */
+  --ob-cori:#FF6B55;     /* 強調コーラル */
+  --ob-track:#DCEFFB;    /* プログレス下地 */
+  --ob-radius:30px;      /* モーダル角丸 */
+  --ob-modal-w:320px;    /* モーダル幅 */
+  --ob-illo-h:184px;     /* イラスト帯の高さ */
+}
+
+/* ---- モーダル本体 ---- */
+.ob-modal{
+  width:var(--ob-modal-w);
+  background:#fff;
+  border-radius:var(--ob-radius);
+  overflow:hidden;
+  box-shadow:0 30px 70px rgba(20,45,90,.4);
+  font-family:'Zen Maru Gothic',system-ui,sans-serif;
+  color:var(--ob-ink);
+}
+
+/* ---- イラスト帯 ---- */
+.ob-illo{
+  position:relative;
+  height:var(--ob-illo-h);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.ob-illo--welcome{background:linear-gradient(180deg,#BFE9FF,#8FD3F4);}
+.ob-illo--boxes  {background:linear-gradient(180deg,#EAF6FE,#DCEFFB);gap:14px;padding:0 22px;}
+.ob-illo--save   {background:linear-gradient(180deg,#FFF1EC,#FFE3DC);flex-direction:column;gap:12px;padding:0 26px;}
+.ob-illo--grow   {background:linear-gradient(180deg,#FFF8E1,#FFEFC0);flex-direction:column;gap:12px;padding:0 26px;}
+.ob-illo--jobs   {background:linear-gradient(180deg,#E7F6EC,#D5F0DE);gap:10px;padding:0 20px;}
+.ob-illo--start  {background:linear-gradient(180deg,#FFE9A8,#FFD23F);}
+
+/* ---- 「もどる」ボタン（ステップ2以降・左上） ---- */
+.ob-back{
+  position:absolute;top:12px;left:14px;
+  font:700 12px 'Zen Maru Gothic';color:rgba(27,58,107,.65);
+  background:rgba(255,255,255,.82);border:0;border-radius:12px;
+  padding:5px 12px 5px 9px;display:inline-flex;align-items:center;gap:3px;
+  box-shadow:0 2px 6px rgba(27,58,107,.12);cursor:pointer;
+}
+
+/* ---- 本文エリア ---- */
+.ob-body{padding:20px 22px 22px;text-align:center;}
+.ob-dots{display:flex;gap:7px;justify-content:center;margin-bottom:14px;}
+.ob-dots span{width:8px;height:8px;border-radius:5px;background:var(--ob-track);}
+.ob-dots span.is-on{width:22px;background:var(--ob-cor);}
+.ob-title{font:900 21px 'Zen Maru Gothic';color:var(--ob-ink);line-height:1.5;margin:0 0 8px;}
+.ob-desc{font:700 13px 'Zen Maru Gothic';color:var(--ob-sub);line-height:2;margin:0 0 18px;}
+
+/* ---- 次へ／はじめよう ボタン ---- */
+.ob-btn{
+  width:100%;height:60px;border:0;border-radius:18px;background:var(--ob-cor);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 10px 22px rgba(255,126,107,.45);
+  color:#fff;font:900 17px 'Zen Maru Gothic';cursor:pointer;
+}
+.ob-btn--last{background:linear-gradient(90deg,#FFB199,#FF7E6B);}
+
+/* ---- ルビ（本文の約50%） ---- */
+.ob-modal ruby rt{font-size:.5em;font-weight:500;}
+
+/* ---- おかねの絵（コイン） ---- */
+.ob-coin{
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#FFE89A,#FFD23F);
+  border:2px solid #fff;box-shadow:0 3px 6px rgba(27,58,107,.2);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:900;color:#C98A12;flex-shrink:0;font-family:'Zen Maru Gothic';
+  width:22px;height:22px;font-size:9px;
+}
+
+/* ---- ロゴバッジ（マスコット枠） ---- */
+.ob-logo{
+  width:96px;height:96px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  box-shadow:0 8px 18px rgba(27,58,107,.22);flex-shrink:0;
+}
+
+/* ---- ためる：目標カードの部品 ---- */
+.ob-goal-row{display:flex;align-items:center;gap:12px;}
+.ob-goal-pic{
+  width:56px;height:56px;border-radius:14px;background:#fff;border:2px solid #FFD3C9;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 3px 8px rgba(27,58,107,.1);
+}
+.ob-goal-label{text-align:left;}
+.ob-goal-cap{font:700 10px 'Zen Maru Gothic';color:var(--ob-sub);}
+.ob-goal-name{font:900 15px 'Zen Maru Gothic';color:var(--ob-ink);}
+.ob-bar{
+  width:100%;height:16px;border-radius:9px;background:#fff;overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(27,58,107,.12);
+}
+.ob-bar > i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#FFB199,#FF7E6B);}
+.ob-remain{display:flex;align-items:center;gap:6px;font:700 12px 'Zen Maru Gothic';color:var(--ob-cori);}
+.ob-remain b{font-size:19px;font-weight:900;}
+
+/* ---- ふやす：ねた回数（月）の列 ---- */
+.ob-moons{display:flex;gap:5px;}
+.ob-moon{
+  width:15px;height:15px;border-radius:50%;background:#7FB2D8;border:2px solid #fff;
+  box-shadow:0 2px 3px rgba(27,58,107,.16);position:relative;display:inline-block;
+}
+.ob-moon::after{content:"";position:absolute;right:-1px;top:-2px;width:10px;height:10px;border-radius:50%;background:#EAF6FE;}
+.ob-chip{
+  border-radius:14px;padding:7px 14px;background:#fff;
+  box-shadow:0 5px 12px rgba(27,58,107,.12);font:700 11px 'Zen Maru Gothic';color:var(--ob-ink);
+}
+.ob-grow-row{display:flex;align-items:center;gap:10px;}
+
+/* ---- 3つのはこ ---- */
+.ob-box{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.ob-box-ic{
+  width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 12px rgba(27,58,107,.14);
+}
+.ob-box-name{font:900 12px 'Zen Maru Gothic';color:var(--ob-ink);}
+
+/* ---- おしごと ---- */
+.ob-jobcard{background:#fff;border-radius:14px;padding:10px 12px;box-shadow:0 5px 12px rgba(27,58,107,.12);text-align:center;}
+.ob-jobthumb{width:40px;height:30px;border-radius:8px;margin:0 auto 6px;background:repeating-linear-gradient(45deg,#EAF6FE,#EAF6FE 6px,#D6EDFB 6px,#D6EDFB 12px);}
+.ob-jobname{font:900 11px 'Zen Maru Gothic';color:var(--ob-ink);}
+.ob-jobpay{display:flex;align-items:center;gap:3px;justify-content:center;margin-top:3px;font:900 11px 'Zen Maru Gothic';color:var(--ob-ink);}
+.ob-status{display:flex;flex-direction:column;gap:6px;}
+.ob-badge{font:900 9px 'Zen Maru Gothic';border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;}
+.ob-badge--pending{color:#B07D12;background:#FFF1CC;border:2px solid #F2C94C;}
+.ob-badge--ok{color:#2E9C5B;background:#DCF5E6;border:2px solid #3DB66E;}
+
+/* ---- 紙吹雪（はじめよう） ---- */
+.ob-confetti{position:absolute;width:9px;height:14px;border-radius:2px;}

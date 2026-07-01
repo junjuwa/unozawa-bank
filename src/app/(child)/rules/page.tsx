@@ -55,7 +55,7 @@ export default function RulesPage() {
       </button>
 
       {showAbout && (
-        <AboutModal accentColor={theme.accent} onClose={() => setShowAbout(false)} />
+        <AboutModal onClose={() => setShowAbout(false)} />
       )}
     </div>
   );
