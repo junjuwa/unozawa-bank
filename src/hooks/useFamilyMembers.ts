@@ -22,10 +22,19 @@ export function useFamilyMembers() {
       if (!user) { setLoading(false); return; }
 
       const { data, error } = await supabase.rpc("get_family_members");
-      console.log("[useFamilyMembers] user:", user.id, "data:", data, "error:", error);
+      if (error) { console.error("get_family_members:", error); }
+
+      const mapped: FamilyMember[] = (data ?? []).map((r: Record<string, unknown>) => ({
+        id:           r.m_id as string,
+        display_name: (r.m_display_name as string) ?? "",
+        role:         r.m_role as "parent" | "child",
+        theme_key:    r.m_theme_key as string | null,
+        avatar_url:   r.m_avatar_url as string | null,
+        has_pin:      r.m_has_pin as boolean,
+      }));
 
       if (!cancelled) {
-        setMembers((data ?? []) as FamilyMember[]);
+        setMembers(mapped);
         setLoading(false);
       }
     })();
