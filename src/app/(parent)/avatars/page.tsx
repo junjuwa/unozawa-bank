@@ -61,26 +61,42 @@ export default function AvatarsPage() {
     }
   }
 
+  async function uploadToStorage(file: File, path: string): Promise<string | null> {
+    const supabase = createClient();
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) { setSaveMessage({ ok: false, text: `アップロード失敗: ${error.message}` }); return null; }
+    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+    return data.publicUrl;
+  }
+
   async function handleFileChange(key: "rei_blue" | "jun_red", file: File | null) {
     if (!file) return;
-    readAsDataUrl(file, async (dataUrl) => {
-      setAvatar(key, dataUrl);
-      if (isReal) {
-        const child = profiles!.find((c) => c.theme_key === key);
-        if (child) await saveToProfile(child.id, { avatar_url: dataUrl });
-      }
-    });
+    if (isReal) {
+      const child = profiles!.find((c) => c.theme_key === key);
+      if (!child) return;
+      setSaveMessage(null);
+      const url = await uploadToStorage(file, `${child.id}/avatar`);
+      if (!url) return;
+      setAvatar(key, url);
+      await saveToProfile(child.id, { avatar_url: url });
+    } else {
+      readAsDataUrl(file, (dataUrl) => setAvatar(key, dataUrl));
+    }
   }
 
   async function handleMascotFileChange(key: "rei_blue" | "jun_red", file: File | null) {
     if (!file) return;
-    readAsDataUrl(file, async (dataUrl) => {
-      setMascotImage(key, dataUrl);
-      if (isReal) {
-        const child = profiles!.find((c) => c.theme_key === key);
-        if (child) await saveToProfile(child.id, { mascot_url: dataUrl });
-      }
-    });
+    if (isReal) {
+      const child = profiles!.find((c) => c.theme_key === key);
+      if (!child) return;
+      setSaveMessage(null);
+      const url = await uploadToStorage(file, `${child.id}/mascot`);
+      if (!url) return;
+      setMascotImage(key, url);
+      await saveToProfile(child.id, { mascot_url: url });
+    } else {
+      readAsDataUrl(file, (dataUrl) => setMascotImage(key, dataUrl));
+    }
   }
 
   async function handleClearAvatar(key: "rei_blue" | "jun_red") {
