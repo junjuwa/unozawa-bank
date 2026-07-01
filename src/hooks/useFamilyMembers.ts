@@ -7,9 +7,9 @@ export type FamilyMember = {
   role: "parent" | "child";
   theme_key: string | null;
   pin_hash: string | null;
+  avatar_url: string | null;
 };
 
-// 同じ家族の全メンバー（自分を含む）を返す。未ログインなら null。
 export function useFamilyMembers() {
   const [members, setMembers] = useState<FamilyMember[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ export function useFamilyMembers() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("id, display_name, role, theme_key, pin_hash")
+        .select("id, display_name, role, theme_key, pin_hash, avatar_url")
         .eq("family_id", me.family_id);
 
       if (!cancelled) {

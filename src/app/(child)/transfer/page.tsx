@@ -126,7 +126,7 @@ function AmountButton({
         height: 36,
         borderRadius: 18,
         padding: "0 2px",
-        background: tone === "plus" ? theme.accent : theme.progressTrack,
+        background: tone === "plus" ? theme.accent : "rgba(0,0,0,0.13)",
         color: tone === "plus" ? "#fff" : theme.ink,
         fontWeight: 900,
         fontSize: 11,

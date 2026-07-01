@@ -10,8 +10,6 @@ import { PinGate } from "@/components/ui/PinGate";
 import { UserSwitchModal, SwitchUser } from "@/components/ui/UserSwitchModal";
 import { createClient } from "@/lib/supabase/client";
 
-const THEME_EMOJI: Record<string, string> = { rei_blue: "🌊", jun_red: "🔥" };
-
 export default function ParentLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -31,14 +29,13 @@ export default function ParentLayout({
     router.push("/parent-login");
   }
 
-  const switchUsers: SwitchUser[] = (members ?? [])
-    .filter((m) => m.pin_hash)
-    .map((m) => ({
-      profileId: m.id,
-      label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
-      emoji: m.role === "parent" ? "👔" : (THEME_EMOJI[m.theme_key ?? ""] ?? "👦"),
-      destinationPath: m.role === "parent" ? "/dashboard" : "/home",
-    }));
+  const switchUsers: SwitchUser[] = (members ?? []).map((m) => ({
+    profileId: m.id,
+    label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
+    avatarUrl: m.avatar_url,
+    destinationPath: m.role === "parent" ? "/dashboard" : "/home",
+    hasPin: !!m.pin_hash,
+  }));
   const canSwitch = !!userId && switchUsers.filter((u) => u.profileId !== userId).length > 0;
 
   return (

@@ -19,11 +19,6 @@ import { UserSwitchModal, SwitchUser } from "@/components/ui/UserSwitchModal";
 import { useEffect } from "react";
 import { ThemeKey } from "@/lib/theme/themes";
 
-const THEME_EMOJI: Record<string, string> = {
-  rei_blue: "🌊",
-  jun_red:  "🔥",
-};
-
 export default function ChildLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -62,15 +57,14 @@ export default function ChildLayout({
   const userId = (profile as { id?: string } | null)?.id ?? null;
   const hasPinHash = !!(profile as { pin_hash?: string | null } | null)?.pin_hash;
 
-  // 切り替え候補リストを組み立て（実ログイン時のみ表示）
-  const switchUsers: SwitchUser[] = (members ?? [])
-    .filter((m) => m.pin_hash) // PINが設定されているメンバーのみ
-    .map((m) => ({
-      profileId: m.id,
-      label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
-      emoji: m.role === "parent" ? "👔" : (THEME_EMOJI[m.theme_key ?? ""] ?? "👦"),
-      destinationPath: m.role === "parent" ? "/dashboard" : "/home",
-    }));
+  // 切り替え候補リスト（全メンバー。PINなしも表示し、モーダル側でエラー案内）
+  const switchUsers: SwitchUser[] = (members ?? []).map((m) => ({
+    profileId: m.id,
+    label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
+    avatarUrl: m.avatar_url,
+    destinationPath: m.role === "parent" ? "/dashboard" : "/home",
+    hasPin: !!m.pin_hash,
+  }));
 
   const canSwitch = !!userId && switchUsers.filter((u) => u.profileId !== userId).length > 0;
 
