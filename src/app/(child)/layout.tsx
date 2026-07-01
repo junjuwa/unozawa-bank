@@ -35,8 +35,12 @@ export default function ChildLayout({
     const p = profile as { theme_key?: string; avatar_url?: string | null } | null;
     if (!p?.theme_key) return;
     if (p.theme_key !== themeKey) setTheme(p.theme_key as ThemeKey);
+    // data: URL（ローカル画像）はサイズが大きくQuotaExceededになるためスキップ
+    // リモートURL（https://...）のみキャッシュする
     const key = `login_avatar_${p.theme_key}`;
-    if (p.avatar_url) localStorage.setItem(key, p.avatar_url);
+    if (p.avatar_url && p.avatar_url.startsWith("https://")) {
+      try { localStorage.setItem(key, p.avatar_url); } catch { /* quota超過時は無視 */ }
+    }
   }, [profile, themeKey, setTheme]);
 
   // 実ログイン済みかつtheme_keyが一致する場合のみ実名を使う

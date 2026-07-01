@@ -23,7 +23,12 @@ export default function LoginPage() {
 
   // localStorageキャッシュ（前回ログイン時に保存）→ なければmockにフォールバック
   function getCachedAvatar(themeKey: string): string | null {
-    try { return localStorage.getItem(`login_avatar_${themeKey}`) || null; } catch { return null; }
+    try {
+      const v = localStorage.getItem(`login_avatar_${themeKey}`);
+      // data: URL が入っていた場合は削除して無効化
+      if (v?.startsWith("data:")) { localStorage.removeItem(`login_avatar_${themeKey}`); return null; }
+      return v || null;
+    } catch { return null; }
   }
 
   // signInWithPasskey()自体はdiscoverable credential方式でユーザーを特定しないため、
