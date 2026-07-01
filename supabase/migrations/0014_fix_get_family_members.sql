@@ -1,6 +1,7 @@
 -- get_family_members の「column reference "id" is ambiguous」を修正
 -- return table の列名に "m_" プレフィックスを付けて曖昧さを解消
 
+drop function if exists public.get_family_members();
 create or replace function public.get_family_members()
 returns table (
   m_id          uuid,
