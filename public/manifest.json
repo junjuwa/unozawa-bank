@@ -1,6 +1,6 @@
 {
-  "name": "おこづかいアプリ",
-  "short_name": "おこづかい",
+  "name": "UNOZAWA BANK",
+  "short_name": "UNOZAWA",
   "description": "れい・じゅん きょうだいの おこづかい かんり",
   "start_url": "/login",
   "scope": "/",

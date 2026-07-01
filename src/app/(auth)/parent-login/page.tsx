@@ -73,6 +73,7 @@ export default function ParentLoginPage() {
         color: theme.ink,
       }}
     >
+      <img src="/brand/logo-lockup-dark.svg" alt="UNOZAWA BANK" style={{ height: 44, width: "auto", marginBottom: 16 }} />
       <Link
         href="/login"
         style={{ fontSize: 12, color: theme.sub, marginBottom: 12, alignSelf: "flex-start", maxWidth: 320, width: "100%" }}

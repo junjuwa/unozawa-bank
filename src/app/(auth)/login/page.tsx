@@ -77,6 +77,7 @@ export default function LoginPage() {
         color: theme.ink,
       }}
     >
+      <img src="/brand/logo-lockup-dark.svg" alt="UNOZAWA BANK" style={{ height: 48, width: "auto", marginBottom: 4 }} />
       <h1 style={{ fontWeight: 900, fontSize: 22 }}>だれですか？</h1>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 320 }}>
         <AuthTile

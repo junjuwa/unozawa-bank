@@ -42,9 +42,9 @@ export default function ParentLayout({
           justifyContent: "space-between",
         }}
       >
-        <div>
-          <div style={{ fontWeight: theme.headingWeight, fontSize: 18 }}>おこづかい かんり</div>
-          <div style={{ fontSize: 12, color: theme.sub }}>{displayName}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <img src="/brand/logo-lockup-dark.svg" alt="UNOZAWA BANK" style={{ height: 36, width: "auto" }} />
+          <div style={{ fontSize: 11, color: theme.sub, paddingLeft: 2 }}>{displayName}</div>
         </div>
         <button
           type="button"
