@@ -42,6 +42,7 @@ export function useInvestmentLots() {
         interestAmount: row.interest_amount,
         totalDays,
         remainingDays,
+        startedAt: row.started_at.slice(0, 10),
       };
     });
 

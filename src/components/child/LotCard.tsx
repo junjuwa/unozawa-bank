@@ -4,9 +4,12 @@ import type { ChildTheme } from "@/lib/theme/childTheme";
 import type { InvestLot } from "@/lib/mock/investLots";
 
 export function LotCard({ theme, lot, index, total }: { theme: ChildTheme; lot: InvestLot; index?: number; total?: number }) {
-  // 複数ロットがあるときのみ「N かい目」を付ける
+  // 「M/D〜」+ 複数時は連番
+  const dateLabel = lot.startedAt
+    ? `${parseInt(lot.startedAt.slice(5, 7))}/${parseInt(lot.startedAt.slice(8, 10))}〜`
+    : "あずけ中";
   const n = (index ?? 0) + 1;
-  const badge = (total ?? 1) > 1 ? `あずけ中 ${n}かい目` : "あずけ中";
+  const badge = (total ?? 1) > 1 ? `${dateLabel} ${n}` : dateLabel;
 
   const interest = Math.max(0, lot.interestAmount - lot.principal);
   const ratePct = lot.principal > 0 ? Math.round((interest / lot.principal) * 100) : 0;
