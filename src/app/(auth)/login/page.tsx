@@ -216,14 +216,7 @@ export default function LoginPage() {
               {loading ? (
                 "にんしょうちゅう…"
               ) : (
-                <>
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 11a3 3 0 0 0-3 3v3.5"/><path d="M12 11a3 3 0 0 1 3 3c0 1.2 0 2.4-.4 3.5"/>
-                    <path d="M7 11a5 5 0 0 1 10 0c0 2-.3 3.8-.9 5.6"/><path d="M4.4 12a7.6 7.6 0 0 1 15.2 0c0 1.3-.1 2.6-.4 3.8"/>
-                    <path d="M9.5 20c.6-1.4.9-2.9.9-4.5"/>
-                  </svg>
-                  ログインする
-                </>
+                "ログインする"
               )}
             </button>
             {error ? (
