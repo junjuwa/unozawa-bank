@@ -1,43 +1,30 @@
-// HANDOFF.md §9: 金額は数字＋お金の絵を併記し桁感覚を補う。
-// アイコン形状はClaude designで作成したicons/coin.svgを使用。
-import { ChildTheme } from "@/lib/theme/childTheme";
+import React from "react";
+import type { ThemeKey } from "@/lib/theme/childTheme";
 
-export function Coin({ coin, size = 18 }: { coin: ChildTheme["coin"]; size?: number }) {
-  if (coin === "none") return null;
-  const isHard = coin === "gold-hard";
+export function Coin({ size = 22, themeKey }: { size?: 22 | 44; themeKey: ThemeKey }) {
+  const fontSize = Math.round(size * 0.42);
+  const isJun = themeKey === "jun_red";
+  const common: React.CSSProperties = {
+    width: size, height: size, borderRadius: "50%", flexShrink: 0,
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    fontFamily: "'Zen Maru Gothic'", fontWeight: 900, fontSize, position: "relative",
+  };
+  if (isJun) {
+    return <span style={{ ...common, background: "#FFD23F", border: "2.5px solid #111", boxShadow: "2px 2px 0 #111", color: "#111" }}>¥</span>;
+  }
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill={isHard ? "#FFD23F" : "none"}
-      stroke={isHard ? "#111" : "#B07D12"}
-      strokeWidth={isHard ? 2 : 1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="8.5" fill={isHard ? "#FFD23F" : "#FFE89A"} />
-      <path d="M12 11 V16" />
-      <path d="M9 8 L12 11 L15 8" />
-      <path d="M9.5 12 H14.5 M9.5 13.8 H14.5" />
-    </svg>
+    <span style={{ ...common, background: "radial-gradient(circle at 35% 30%, #FFE89A, #FFD23F)", border: "2px solid #fff", boxShadow: "0 3px 5px rgba(27,58,107,.16)", color: "#C98A12" }}>
+      ¥
+      <span style={{ position: "absolute", top: "14%", left: "20%", width: "38%", height: "26%", borderRadius: "50%", background: "rgba(255,255,255,.7)", transform: "rotate(-18deg)" }} />
+    </span>
   );
 }
 
-export function CoinRow({
-  coin,
-  count,
-  size,
-}: {
-  coin: ChildTheme["coin"];
-  count: number;
-  size?: number;
-}) {
-  if (coin === "none") return null;
+export function CoinRow({ themeKey, count, size = 22 }: { themeKey: ThemeKey; count: number; size?: number }) {
   return (
-    <span style={{ display: "inline-flex", gap: 2 }}>
+    <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap" }}>
       {Array.from({ length: Math.max(1, Math.min(count, 6)) }).map((_, i) => (
-        <Coin key={i} coin={coin} size={size} />
+        <Coin key={i} themeKey={themeKey} size={size <= 22 ? 22 : 44} />
       ))}
     </span>
   );

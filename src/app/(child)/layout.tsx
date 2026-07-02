@@ -100,6 +100,7 @@ export default function ChildLayout({
       <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
         <ChildHeader
           theme={theme}
+          themeKey={themeKey}
           name={name}
           total={total}
           avatarUrl={avatarUrl}

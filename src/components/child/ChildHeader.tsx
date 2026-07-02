@@ -1,14 +1,33 @@
-import { ChildTheme } from "@/lib/theme/childTheme";
+import { ChildTheme, ThemeKey } from "@/lib/theme/childTheme";
 
 type ChildHeaderProps = {
   theme: ChildTheme;
+  themeKey: ThemeKey;
   name: string;
   total: number;
   avatarUrl?: string | null;
   onSwitchUser?: () => void;
 };
 
-export function ChildHeader({ theme, name, total, avatarUrl, onSwitchUser }: ChildHeaderProps) {
+function BalanceBadge({ total, themeKey }: { total: number; themeKey: ThemeKey }) {
+  const fmt = "¥" + total.toLocaleString("ja-JP");
+  if (themeKey === "jun_red") {
+    return (
+      <div style={{ background: "#FFD23F", border: "3px solid #111", borderRadius: 10, boxShadow: "3px 3px 0 #111", transform: "rotate(3deg)", padding: "8px 14px", textAlign: "center", flexShrink: 0 }}>
+        <div style={{ font: "400 9px 'RocknRoll One'", color: "#111" }}>もってる</div>
+        <div style={{ font: "400 22px 'RocknRoll One'", color: "#E2231A", lineHeight: 1.05, textShadow: "1px 1px 0 #111" }}>{fmt}</div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ background: "rgba(255,255,255,0.92)", borderRadius: 14, boxShadow: "0 3px 10px rgba(0,0,0,.18)", padding: "8px 14px", textAlign: "right", flexShrink: 0 }}>
+      <div style={{ font: "700 9px 'Zen Maru Gothic'", color: "#2c6f96" }}>もってる</div>
+      <div style={{ font: "900 22px 'Zen Maru Gothic'", color: "#1B3A6B", lineHeight: 1.05 }}>{fmt}</div>
+    </div>
+  );
+}
+
+export function ChildHeader({ theme, themeKey, name, total, avatarUrl, onSwitchUser }: ChildHeaderProps) {
   return (
     <header
       style={{
@@ -89,23 +108,7 @@ export function ChildHeader({ theme, name, total, avatarUrl, onSwitchUser }: Chi
       </div>
 
       {/* 右：もってる金額パネル */}
-      <div
-        style={{
-          background: "rgba(255,255,255,0.92)",
-          borderRadius: 14,
-          padding: "6px 12px 8px",
-          boxShadow: "0 3px 10px rgba(0,0,0,.18)",
-          flexShrink: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-        }}
-      >
-        <span style={{ fontSize: 9, fontWeight: 700, color: theme.sub, lineHeight: 1 }}>もってる</span>
-        <span style={{ fontWeight: 900, fontSize: 22, lineHeight: 1.2, color: theme.ink, letterSpacing: "-0.5px" }}>
-          ¥{new Intl.NumberFormat("ja-JP").format(total)}
-        </span>
-      </div>
+      <BalanceBadge total={total} themeKey={themeKey} />
     </header>
   );
 }

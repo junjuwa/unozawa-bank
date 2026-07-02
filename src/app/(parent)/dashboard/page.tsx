@@ -13,6 +13,7 @@ import { spendMoney } from "@/lib/money/rpc";
 import { THEME_LABELS } from "@/lib/theme/themes";
 import { KpiCard } from "@/components/parent/KpiCard";
 import { ChildSummaryCard } from "@/components/parent/ChildSummaryCard";
+import { WeeklyMiniGraph } from "@/components/parent/WeeklyMiniGraph";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const CHILDREN = ["rei_blue", "jun_red"] as const;
@@ -114,6 +115,21 @@ export default function DashboardPage() {
             padding: 16,
           }}
         >
+          <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 10 }}>今週の ためた額</h2>
+          <WeeklyMiniGraph
+            reiData={overview.find((c) => c.themeKey === "rei_blue")?.weeklyHistory ?? Array(7).fill(0)}
+            junData={overview.find((c) => c.themeKey === "jun_red")?.weeklyHistory ?? Array(7).fill(0)}
+          />
+        </div>
+
+        <div
+          style={{
+            background: theme.cardBg,
+            borderRadius: theme.cardRadius,
+            border: theme.cardBorder,
+            padding: 16,
+          }}
+        >
           <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 10 }}>さいきんの うごき</h2>
           {activities.length === 0 ? (
             <p style={{ fontSize: 12, color: theme.sub }}>まだ うごきが ありません</p>
@@ -203,6 +219,18 @@ export default function DashboardPage() {
             />
           );
         })}
+      </div>
+
+      <div
+        style={{
+          background: theme.cardBg,
+          borderRadius: theme.cardRadius,
+          border: theme.cardBorder,
+          padding: 16,
+        }}
+      >
+        <h2 style={{ fontWeight: 800, fontSize: 14, marginBottom: 10 }}>今週の ためた額</h2>
+        <WeeklyMiniGraph reiData={weeklyHistory["rei_blue"]} junData={weeklyHistory["jun_red"]} />
       </div>
 
       <div

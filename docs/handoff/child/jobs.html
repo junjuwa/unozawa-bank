@@ -1,0 +1,71 @@
+<!-- ========================================================================
+  UNOZAWA BANK / 子供・おしごと
+  必要: child.css。data-theme 切替。状態は色＋アイコン併用（申請/しんせいちゅう/承認）。
+  ======================================================================== -->
+<div class="cs-scr" data-theme="rei" data-screen="jobs">
+  <span class="cs-blob cs-b1"></span><span class="cs-blob cs-b2"></span><span class="cs-blob cs-b3"></span>
+  <div class="cs-status"><span>9:41</span><span class="r">▮▮▮ 100%</span></div>
+
+  <div class="cs-head">
+    <span class="cs-avatar"><img src="../mascots/rei-avatar.png" alt="" onerror="this.style.display='none'"></span>
+    <div><div class="cs-hello">おはよう！</div><div class="cs-name">れい</div></div>
+    <div class="cs-bal"><div class="k">もってる おかね</div><div class="v">¥1,670</div></div>
+  </div>
+
+  <div class="cs-mascot">
+    <div class="cs-bubble">おてつだいで おかねを ゲット！</div>
+    <div class="cs-mascot-badge">
+      <svg width="40" height="40" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18 H41 M33 21 H41 M33 24 H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20 a4 4 0 0 1 8 0 v13 q11 4.5 22 0 v-13 a4 4 0 0 1 8 0 v13 a15 15 0 0 1 -38 0 Z" fill="#F5B62E"/></svg>
+    </div>
+  </div>
+
+  <div class="cs-body">
+    <div class="cs-titlechip"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="9.4,16.6 4.6,11.8 6.5,9.9 9.4,12.8 17.5,4.7 19.4,6.6"/></svg></span>おしごと</div>
+    <div class="cs-grid cs-grid--jobs">
+      <!-- しんせいちゅう -->
+      <div class="cs-card" style="overflow:hidden;">
+        <div style="height:80px;background:repeating-linear-gradient(45deg,#EAF6FE,#EAF6FE 8px,#D6EDFB 8px,#D6EDFB 16px);display:flex;align-items:center;justify-content:center;color:#6f9cbf;font:700 9px inherit;">おしごとの え</div>
+        <div style="padding:12px;">
+          <div style="font:var(--hw) 14px inherit;color:var(--ink);">おさらあらい</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:8px 0 11px;"><span class="cs-coin" style="width:20px;height:20px;">¥</span><span style="font:var(--hw) 16px inherit;color:var(--ink);">50<small style="font-size:10px;">えん</small></span></div>
+          <div style="height:44px;border-radius:14px;background:#FFF1CC;border:2px solid #F2C94C;color:#B07D12;display:flex;align-items:center;justify-content:center;gap:7px;font:var(--hw) 13px inherit;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v3l-4 6 4 6v3H6v-3l4-6-4-6z"/></svg>しんせいちゅう</div>
+        </div>
+      </div>
+      <!-- 申請する -->
+      <div class="cs-card" style="overflow:hidden;">
+        <div style="height:80px;background:repeating-linear-gradient(45deg,#EAF6FE,#EAF6FE 8px,#D6EDFB 8px,#D6EDFB 16px);display:flex;align-items:center;justify-content:center;color:#6f9cbf;font:700 9px inherit;">おしごとの え</div>
+        <div style="padding:12px;">
+          <div style="font:var(--hw) 14px inherit;color:var(--ink);">おふろそうじ</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:8px 0 11px;"><span class="cs-coin" style="width:20px;height:20px;">¥</span><span style="font:var(--hw) 16px inherit;color:var(--ink);">30<small style="font-size:10px;">えん</small></span></div>
+          <div style="height:44px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;font:var(--hw) 14px inherit;box-shadow:0 6px 14px rgba(255,126,107,.4);"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,11 21,3 13,21 11,13"/></svg><ruby>申請<rt>しんせい</rt></ruby>する</div>
+        </div>
+      </div>
+      <!-- 承認 -->
+      <div class="cs-card" style="overflow:hidden;">
+        <div style="height:80px;background:repeating-linear-gradient(45deg,#EAF6FE,#EAF6FE 8px,#D6EDFB 8px,#D6EDFB 16px);display:flex;align-items:center;justify-content:center;color:#6f9cbf;font:700 9px inherit;">おしごとの え</div>
+        <div style="padding:12px;">
+          <div style="font:var(--hw) 14px inherit;color:var(--ink);">くつ ならべ</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:8px 0 11px;"><span class="cs-coin" style="width:20px;height:20px;">¥</span><span style="font:var(--hw) 16px inherit;color:var(--ink);">20<small style="font-size:10px;">えん</small></span></div>
+          <div style="height:44px;border-radius:14px;background:#DCF5E6;border:2px solid #3DB66E;color:#2E9C5B;display:flex;align-items:center;justify-content:center;gap:7px;font:var(--hw) 13px inherit;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="9.4,16.6 4.6,11.8 6.5,9.9 9.4,12.8 17.5,4.7 19.4,6.6"/></svg>OK！<ruby>承認<rt>しょうにん</rt></ruby></div>
+        </div>
+      </div>
+      <!-- 申請する2 -->
+      <div class="cs-card" style="overflow:hidden;">
+        <div style="height:80px;background:repeating-linear-gradient(45deg,#EAF6FE,#EAF6FE 8px,#D6EDFB 8px,#D6EDFB 16px);display:flex;align-items:center;justify-content:center;color:#6f9cbf;font:700 9px inherit;">おしごとの え</div>
+        <div style="padding:12px;">
+          <div style="font:var(--hw) 14px inherit;color:var(--ink);">ごみ すて</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:8px 0 11px;"><span class="cs-coin" style="width:20px;height:20px;">¥</span><span style="font:var(--hw) 16px inherit;color:var(--ink);">20<small style="font-size:10px;">えん</small></span></div>
+          <div style="height:44px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;font:var(--hw) 14px inherit;box-shadow:0 6px 14px rgba(255,126,107,.4);"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,11 21,3 13,21 11,13"/></svg>しんせいする</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="cs-nav">
+    <div class="cs-navitem"><div class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,3 21,11 3,11"/><rect x="6" y="11" width="12" height="10" rx="1"/></svg></div>ホーム</div>
+    <div class="cs-navitem"><div class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,3 20,12 15,12 15,21 9,21 9,12 4,12"/></svg></div>ふやす</div>
+    <div class="cs-navitem"><div class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="3,9 9,4 9,7 21,7 21,11 9,11 9,14"/><polygon points="21,15 15,20 15,17 3,17 3,13 15,13 15,10"/></svg></div>ふりかえ</div>
+    <div class="cs-navitem is-on"><div class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="9.4,16.6 4.6,11.8 6.5,9.9 9.4,12.8 17.5,4.7 19.4,6.6"/></svg></div>おしごと</div>
+    <div class="cs-navitem"><div class="pill"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="7.4" height="16" rx="1.5"/><rect x="12.6" y="4" width="7.4" height="16" rx="1.5"/></svg></div>やくそく</div>
+  </nav>
+</div>

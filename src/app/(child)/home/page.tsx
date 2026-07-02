@@ -53,6 +53,7 @@ export default function HomePage() {
       <Link href="/goals">
         <BalanceCard
           theme={theme}
+          themeKey={themeKey}
           kind="save"
           layout="featured"
           label="ためる"
@@ -78,6 +79,7 @@ export default function HomePage() {
           <Link href="/history">
             <BalanceCard
               theme={theme}
+              themeKey={themeKey}
               kind="spend"
               label="つかう"
               icon={<BoxIcon kind="spend" />}
@@ -88,6 +90,7 @@ export default function HomePage() {
         <div className="flex-1">
           <BalanceCard
             theme={theme}
+            themeKey={themeKey}
             kind="grow"
             label="ふやす"
             icon={<BoxIcon kind="grow" />}

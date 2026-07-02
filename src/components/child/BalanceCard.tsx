@@ -1,4 +1,4 @@
-import { ChildTheme } from "@/lib/theme/childTheme";
+import { ChildTheme, ThemeKey } from "@/lib/theme/childTheme";
 import { CoinRow } from "@/components/child/Coin";
 import { GoalCard } from "@/components/child/GoalCard";
 import { BOX_COLORS } from "@/lib/theme/boxColors";
@@ -7,18 +7,18 @@ type BoxKind = keyof typeof BOX_COLORS;
 
 type BalanceCardProps = {
   theme: ChildTheme;
+  themeKey: ThemeKey;
   kind: BoxKind;
   label: string;
   icon: React.ReactNode;
   amount: number;
-  // ためるカードのみ"featured"（アイコン+ラベル+金額を横一列のヘッダーにし、目標を内包する）。
-  // つかう/ふやすは"compact"（アイコン→ラベル→金額→コイン列の縦並び。HANDOFF.md実例の構造）。
   layout?: "featured" | "compact";
   goal?: { name: string; current: number; target: number; otherCount: number; imageUrl?: string };
 };
 
 export function BalanceCard({
   theme,
+  themeKey,
   kind,
   label,
   icon,
@@ -72,6 +72,7 @@ export function BalanceCard({
           <>
             <GoalCard
               theme={theme}
+              themeKey={themeKey}
               name={goal.name}
               current={goal.current}
               target={goal.target}
@@ -125,7 +126,7 @@ export function BalanceCard({
         <span style={{ fontSize: 12 }}>えん</span>
       </div>
 
-      <CoinRow coin={theme.coin} count={coinCount} size={18} />
+      <CoinRow themeKey={themeKey} count={coinCount} size={18} />
     </div>
   );
 }

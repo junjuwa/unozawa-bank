@@ -1,112 +1,32 @@
-import { ThemeKey } from "@/lib/theme/themes";
+import React from "react";
+import type { ThemeKey } from "@/lib/theme/childTheme";
 
-// Okozukai-Home.html の watercolor blobs (rei_blue) と halftone+burst (jun_red) を再現。
-// child/layout.tsx の外枠div内に absolute 配置し、z-index:0でコンテンツ(z-index:1)の背後に置く。
 export function FrameDecoration({ themeKey }: { themeKey: ThemeKey }) {
-  if (themeKey === "rei_blue") {
-    return (
-      <>
-        {/* 右上の大きなブロブ */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: -50,
-            right: -40,
-            width: 220,
-            height: 220,
-            borderRadius: "54% 60% 52% 48%",
-            background: "rgba(255,255,255,0.34)",
-            filter: "blur(1px)",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-        {/* 左上の中ブロブ */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 60,
-            left: -60,
-            width: 160,
-            height: 160,
-            borderRadius: "62% 44% 58% 50%",
-            background: "rgba(255,255,255,0.22)",
-            filter: "blur(2px)",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-        {/* 右中段の小ブロブ */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 260,
-            right: -30,
-            width: 100,
-            height: 100,
-            borderRadius: "48% 58% 62% 44%",
-            background: "rgba(255,255,255,0.18)",
-            filter: "blur(1px)",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-        {/* 左下の小ブロブ */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            bottom: 120,
-            left: -20,
-            width: 80,
-            height: 80,
-            borderRadius: "55% 45% 50% 60%",
-            background: "rgba(255,255,255,0.16)",
-            filter: "blur(2px)",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-      </>
-    );
-  }
+  const base: React.CSSProperties = { position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" };
 
   if (themeKey === "jun_red") {
     return (
-      <>
-        {/* ハーフトーン dot pattern（SVG背景） */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.18) 1.5px, transparent 1.5px)",
-            backgroundSize: "13px 13px",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-        {/* バースト円 */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: -80,
-            left: -60,
-            width: 280,
-            height: 280,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,80,60,0.55) 0%, rgba(220,30,30,0.0) 70%)",
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        />
-      </>
+      <div style={base} aria-hidden>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,.16) 1.6px, transparent 1.7px)", backgroundSize: "13px 13px" }} />
+        <div style={{ position: "absolute", top: -90, right: -90, width: 320, height: 320, borderRadius: "50%",
+          background: "repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.14) 0deg 3deg, transparent 3deg 9deg)",
+          WebkitMaskImage: "radial-gradient(circle,#000 30%,transparent 62%)", maskImage: "radial-gradient(circle,#000 30%,transparent 62%)" }} />
+        <div style={{ position: "absolute", bottom: -110, left: -110, width: 300, height: 300, borderRadius: "50%",
+          background: "repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,210,63,.16) 0deg 3deg, transparent 3deg 9deg)",
+          WebkitMaskImage: "radial-gradient(circle,#000 30%,transparent 62%)", maskImage: "radial-gradient(circle,#000 30%,transparent 62%)" }} />
+      </div>
     );
   }
-
-  return null;
+  if (themeKey === "rei_blue") {
+    const blob = (s: React.CSSProperties): React.CSSProperties => ({ position: "absolute", borderRadius: "50%", filter: "blur(28px)", ...s });
+    return (
+      <div style={base} aria-hidden>
+        <span style={blob({ width: 200, height: 200, background: "rgba(255,255,255,.55)", top: -40, left: -30 })} />
+        <span style={blob({ width: 180, height: 180, background: "rgba(255,126,107,.10)", bottom: -40, right: -20 })} />
+        <span style={blob({ width: 150, height: 150, background: "rgba(255,210,63,.15)", top: 120, right: 40 })} />
+        <span style={blob({ width: 120, height: 120, background: "rgba(255,255,255,.4)", bottom: 120, left: 40 })} />
+      </div>
+    );
+  }
+  return <div style={base} aria-hidden />;
 }

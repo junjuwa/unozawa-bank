@@ -16,6 +16,7 @@ import {
 } from "@/lib/goals/api";
 import { childThemes } from "@/lib/theme/childTheme";
 import { GoalCard } from "@/components/child/GoalCard";
+import { GoalCelebration } from "@/components/child/GoalCelebration";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 // 実ログイン済みのgoalsテーブルと、未ログイン時のMockGoalsContextを共通の表示型に揃える
@@ -24,6 +25,8 @@ type DisplayGoal = { id: string; name: string; target: number; active: boolean; 
 export default function GoalsPage() {
   const { theme: themeKey } = useMockChildTheme();
   const theme = childThemes[themeKey];
+
+  const [celebGoal, setCelebGoal] = useState<string | null>(null);
 
   const { accounts, loading: accountsLoading } = useAccounts();
   const mockSave = useMockBalances().balances[themeKey].save;
@@ -107,6 +110,7 @@ export default function GoalsPage() {
   }
 
   return (
+    <>
     <div className="flex flex-col gap-4 pt-2">
       <h1 style={{ fontWeight: 900, fontSize: 18, color: theme.ink }}>
         もくひょう いちらん
@@ -191,11 +195,13 @@ export default function GoalsPage() {
             />
             <GoalCard
               theme={theme}
+              themeKey={themeKey}
               name={goal.name}
               current={goal.active ? save : 0}
               target={goal.target}
               imageUrl={goal.imageUrl}
               onImageClick={() => inputRefs.current[goal.id]?.click()}
+              onAchieve={goal.active && save >= goal.target ? () => setCelebGoal(goal.name) : undefined}
             />
           </div>
         </div>
@@ -293,5 +299,13 @@ export default function GoalsPage() {
         </button>
       )}
     </div>
+    {celebGoal && (
+      <GoalCelebration
+        goalName={celebGoal}
+        themeKey={themeKey}
+        onDismiss={() => setCelebGoal(null)}
+      />
+    )}
+    </>
   );
 }

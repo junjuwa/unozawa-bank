@@ -2,7 +2,8 @@
 // (rei_blue/jun_red/parent_dark)にマッピングして持つ。骨格は共通コンポーネント、
 // 表層はここの値だけが画面ごとに差し替わる。ピクセルの最終確認はHANDOFFのHTML参照。
 
-import { ThemeKey } from "./themes";
+export type { ThemeKey } from "./themes";
+import type { ThemeKey } from "./themes";
 
 export interface ChildTheme {
   fontFamily: string;

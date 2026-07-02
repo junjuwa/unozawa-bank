@@ -1,0 +1,193 @@
+/* =========================================================================
+   UNOZAWA BANK — 子供画面 共有スタイル（骨格共通・テーマ切替・レスポンシブ）
+   使い方:
+     1) この child.css を1回読み込む（Zen Maru Gothic / RocknRoll One は @import 済み）
+     2) 各 *.html の <div class="cs-scr" data-theme="rei"> ... </div> を差し込む
+     3) data-theme を "rei"（水彩）/ "jun"（アメコミ）で切替。骨格は共通、表層トークンだけ差し替わる。
+   レスポンシブ: スマホは縦フル＋ボトムナビ。幅820px以上(iPad想定)で左サイドナビ＋ワイド化。
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=RocknRoll+One&display=swap');
+
+/* ---- テーマトークン（表層のみ。骨格は共通） ---- */
+.cs-scr[data-theme="rei"]{
+  --font:'Zen Maru Gothic',system-ui,sans-serif; --hw:900;
+  --frame:linear-gradient(180deg,#CDEEFF 0%,#A6DEF7 48%,#8FD3F4 100%);
+  --ink:#1B3A6B; --sub:#2c6f96; --accent:#FF7E6B; --accent-ink:#FF6B55;
+  --card:#fff; --card-radius:24px; --card-shadow:0 13px 28px rgba(27,58,107,.15); --card-border:none;
+  --tile-radius:14px;
+  --track:#DCEFFB; --fill:linear-gradient(90deg,#FFB199,#FF7E6B); --grow:linear-gradient(90deg,#7FE0A8,#3DB66E);
+  --nav-bg:#fff; --nav-radius:28px 28px 0 0; --nav-border:none; --nav-shadow:0 -8px 22px rgba(27,58,107,.12);
+  --nav-active:#FF7E6B; --nav-active-bg:#FFE3DC; --nav-idle:#9bbdd6;
+  --title-shadow:none; --num-font:'Zen Maru Gothic';
+}
+.cs-scr[data-theme="jun"]{
+  --font:'RocknRoll One',system-ui,sans-serif; --hw:400;
+  --frame:#1B6CD9;
+  --ink:#102A54; --sub:#1B6CD9; --accent:#E2231A; --accent-ink:#E2231A;
+  --card:#fff; --card-radius:10px; --card-shadow:6px 6px 0 #111; --card-border:3px solid #111;
+  --tile-radius:9px;
+  --track:#fff; --fill:repeating-linear-gradient(45deg,#E2231A,#E2231A 7px,#b81c14 7px,#b81c14 14px);
+  --grow:repeating-linear-gradient(45deg,#1B9E5A,#1B9E5A 6px,#15833f 6px,#15833f 12px);
+  --nav-bg:#fff; --nav-radius:0; --nav-border:3px solid #111; --nav-shadow:none;
+  --nav-active:#E2231A; --nav-active-bg:transparent; --nav-idle:#102A54;
+  --title-shadow:none; --num-font:'RocknRoll One';
+}
+
+/* ---- 画面骨格 ---- */
+.cs-scr{
+  position:relative; width:390px; height:844px; border-radius:38px; overflow:hidden;
+  font-family:var(--font); color:var(--ink); background:var(--frame);
+  display:flex; flex-direction:column;
+  box-shadow:0 24px 60px rgba(27,58,107,.26);
+}
+.cs-scr--flat{border-radius:0;width:100%;height:100%;box-shadow:none;}
+.cs-scr *{box-sizing:border-box;}
+
+/* jun の網点・集中線デコ */
+.cs-scr[data-theme="jun"]::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle, rgba(255,255,255,.16) 1.6px, transparent 1.8px);
+  background-size:13px 13px;
+}
+/* rei の水彩ブロブ */
+.cs-blob{position:absolute;border-radius:54% 60% 52% 48%;filter:blur(2px);pointer-events:none;z-index:0;}
+.cs-scr[data-theme="jun"] .cs-blob{display:none;}
+.cs-b1{top:-50px;right:-40px;width:200px;height:200px;background:rgba(255,255,255,.32);}
+.cs-b2{bottom:150px;left:-50px;width:170px;height:170px;background:rgba(255,126,107,.16);}
+.cs-b3{top:320px;right:-40px;width:150px;height:150px;background:rgba(255,210,63,.18);}
+
+/* ---- ステータスバー ---- */
+.cs-status{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 24px 0;font:700 13px var(--font);color:var(--ink);}
+.cs-scr[data-theme="jun"] .cs-status{color:#fff;text-shadow:1px 1px 0 #111;}
+.cs-status .r{letter-spacing:2px;}
+
+/* ---- ヘッダー ---- */
+.cs-head{position:relative;z-index:2;padding:16px 22px 6px;display:flex;align-items:center;gap:14px;}
+.cs-avatar{width:60px;height:60px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  border:3px solid #fff;box-shadow:0 6px 14px rgba(27,58,107,.18);background:#E4F5FF;
+  display:flex;align-items:center;justify-content:center;}
+.cs-scr[data-theme="jun"] .cs-avatar{border-radius:12px;border:3px solid #111;box-shadow:3px 3px 0 #111;}
+.cs-avatar img{width:100%;height:100%;object-fit:cover;}
+.cs-hello{font:700 13px var(--font);color:var(--sub);}
+.cs-name{font:var(--hw) 30px var(--font);color:var(--ink);line-height:1.05;}
+.cs-scr[data-theme="jun"] .cs-name{color:#fff;text-shadow:2px 2px 0 #111,-2px 2px 0 #111,2px -2px 0 #111,-2px -2px 0 #111;}
+.cs-bal{margin-left:auto;text-align:right;background:rgba(255,255,255,.72);border-radius:16px;padding:8px 12px;box-shadow:0 5px 12px rgba(27,58,107,.12);}
+.cs-scr[data-theme="jun"] .cs-bal{background:#FFD23F;border:3px solid #111;border-radius:10px;box-shadow:3px 3px 0 #111;transform:rotate(3deg);}
+.cs-bal .k{font:700 9px var(--font);color:var(--sub);}
+.cs-scr[data-theme="jun"] .cs-bal .k{color:#111;}
+.cs-bal .v{font:var(--hw) 17px var(--font);color:var(--ink);line-height:1;}
+.cs-scr[data-theme="jun"] .cs-bal .v{color:#E2231A;text-shadow:1px 1px 0 #111;}
+
+/* ---- マスコット帯 ---- */
+.cs-mascot{position:relative;z-index:2;padding:4px 22px 14px;display:flex;align-items:flex-end;gap:10px;}
+.cs-bubble{flex:1;background:#fff;border-radius:18px 18px 18px 6px;padding:10px 14px;
+  font:700 12px var(--font);color:var(--ink);box-shadow:0 6px 14px rgba(27,58,107,.14);line-height:1.9;}
+.cs-scr[data-theme="jun"] .cs-bubble{border:3px solid #111;border-radius:14px;box-shadow:4px 4px 0 #111;}
+.cs-bubble ruby rt{font-size:.5em;font-weight:500;}
+.cs-mascot-badge{width:54px;height:54px;flex-shrink:0;border-radius:50%;background:#fff;
+  border:3px solid #fff;box-shadow:0 6px 14px rgba(27,58,107,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cs-scr[data-theme="jun"] .cs-mascot-badge{border:3px solid #111;box-shadow:3px 3px 0 #111;}
+
+/* ---- コンテンツ ---- */
+.cs-body{position:relative;z-index:2;flex:1;overflow:auto;padding:0 18px 100px;}
+.cs-titlechip{display:inline-flex;align-items:center;gap:9px;background:#fff;border-radius:18px;
+  padding:9px 17px;box-shadow:0 6px 14px rgba(27,58,107,.14);font:var(--hw) 18px var(--font);color:var(--ink);margin-bottom:18px;}
+.cs-scr[data-theme="jun"] .cs-titlechip{background:#FFD23F;border:3px solid #111;border-radius:8px;box-shadow:4px 4px 0 #111;}
+.cs-titlechip .ic{display:inline-flex;color:var(--accent);}
+.cs-scr[data-theme="jun"] .cs-titlechip .ic{color:#E2231A;}
+
+/* カード */
+.cs-card{background:var(--card);border:var(--card-border);border-radius:var(--card-radius);box-shadow:var(--card-shadow);}
+.cs-grid{display:grid;gap:14px;align-items:start;}
+.cs-grid--boxes{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));}
+.cs-grid--goals{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.cs-grid--lots{grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;}
+.cs-grid--jobs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;}
+.cs-grid--rules{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.cs-span{grid-column:1/-1;}
+
+/* コイン（おかねの絵） */
+.cs-coin{border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;font:900 9px var(--num-font);
+  background:radial-gradient(circle at 35% 30%,#FFE89A,#FFD23F);border:2px solid #fff;color:#C98A12;box-shadow:0 3px 5px rgba(27,58,107,.16);}
+.cs-scr[data-theme="jun"] .cs-coin{background:#FFD23F;border:2.5px solid #111;color:#111;box-shadow:2px 2px 0 #111;}
+.cs-coins{display:flex;gap:4px;flex-wrap:wrap;}
+
+/* プログレスバー */
+.cs-bar{height:16px;border-radius:9px;background:var(--track);overflow:hidden;box-shadow:inset 0 1px 3px rgba(27,58,107,.12);}
+.cs-scr[data-theme="jun"] .cs-bar{border:2.5px solid #111;border-radius:3px;box-shadow:none;}
+.cs-bar > i{display:block;height:100%;border-radius:9px;background:var(--fill);}
+.cs-bar.is-grow > i{background:var(--grow);}
+.cs-scr[data-theme="jun"] .cs-bar > i{border-radius:0;}
+
+/* ボックスタイル小物 */
+.cs-boxic{width:44px;height:44px;border-radius:var(--tile-radius);display:flex;align-items:center;justify-content:center;}
+.cs-scr[data-theme="jun"] .cs-boxic{border:2.5px solid #111;box-shadow:2px 2px 0 #111;color:#fff;}
+.cs-h2{font:var(--hw) 22px var(--font);color:var(--ink);}
+.cs-amt{font:var(--hw) 26px var(--font);color:var(--ink);}
+.cs-scr[data-theme="jun"] .cs-amt{color:#E2231A;text-shadow:1.5px 1.5px 0 #111;}
+.cs-amt small{font-size:14px;color:var(--ink);text-shadow:none;}
+.cs-inner-panel{background:#F2FAFF;border-radius:18px;padding:14px;}
+.cs-scr[data-theme="jun"] .cs-inner-panel{background:#EEF3FB;border:2.5px solid #111;border-radius:8px;}
+.cs-goalpic{width:54px;height:54px;border-radius:14px;flex-shrink:0;border:2px dashed #9cc6e3;background:#fff;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cs-scr[data-theme="jun"] .cs-goalpic{border:2.5px solid #111;border-radius:6px;box-shadow:2px 2px 0 #111;}
+.cs-goalpic img{width:100%;height:100%;object-fit:cover;}
+.cs-remain{font:700 13px var(--font);color:var(--accent-ink);}
+.cs-scr[data-theme="jun"] .cs-remain{font:400 12px var(--font);color:var(--ink);}
+.cs-remain b{font-size:21px;font-weight:900;}
+.cs-scr[data-theme="jun"] .cs-remain b{color:#E2231A;text-shadow:1.5px 1.5px 0 #111;}
+
+/* バッジ（ふえる/状態） */
+.cs-badge{font:700 9px var(--font);border-radius:8px;padding:2px 6px;display:inline-flex;align-items:center;gap:3px;color:#fff;}
+.cs-scr[data-theme="jun"] .cs-badge{border:2px solid #111;}
+.cs-badge--grow{background:#3DB66E;}
+.cs-scr[data-theme="jun"] .cs-badge--grow{background:#1B9E5A;}
+.cs-badge--pending{background:#FFF1CC;color:#B07D12;border:2px solid #F2C94C;}
+.cs-badge--apply{background:var(--accent);}
+.cs-badge--ok{background:#DCF5E6;color:#2E9C5B;border:2px solid #3DB66E;}
+
+/* 月（ねた回数） */
+.cs-moons{display:flex;gap:4px;flex-wrap:wrap;}
+.cs-moon{width:16px;height:16px;border-radius:50%;background:#7FB2D8;border:2px solid #fff;position:relative;box-shadow:0 2px 3px rgba(27,58,107,.14);}
+.cs-scr[data-theme="jun"] .cs-moon{background:#102A54;border:2px solid #111;box-shadow:none;}
+.cs-moon::after{content:"";position:absolute;right:-1px;top:-2px;width:11px;height:11px;border-radius:50%;background:#EAF6FE;}
+
+/* 大ボタン（振替の確定など） */
+.cs-cta{width:100%;height:64px;border:0;border-radius:18px;background:var(--accent);color:#fff;
+  font:var(--hw) 19px var(--font);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
+  box-shadow:0 10px 22px rgba(255,126,107,.45);}
+.cs-scr[data-theme="jun"] .cs-cta{border:3px solid #111;border-radius:12px;box-shadow:5px 5px 0 #111;text-shadow:1.5px 1.5px 0 #111;}
+
+/* ---- ボトムナビ ---- */
+.cs-nav{position:absolute;left:0;right:0;bottom:0;z-index:3;height:84px;background:var(--nav-bg);
+  border-radius:var(--nav-radius);border-top:var(--nav-border);box-shadow:var(--nav-shadow);
+  display:flex;justify-content:space-around;align-items:flex-start;padding:12px 6px 0;}
+.cs-navitem{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--nav-idle);font:700 10px var(--font);padding-top:5px;}
+.cs-scr[data-theme="jun"] .cs-navitem{font:400 10px var(--font);}
+.cs-navitem.is-on{color:var(--nav-active);padding-top:0;}
+.cs-navitem .pill{width:46px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;}
+.cs-navitem.is-on .pill{background:var(--nav-active-bg);}
+.cs-scr[data-theme="jun"] .cs-navitem.is-on .pill{background:#E2231A;color:#fff;border:2.5px solid #111;border-radius:8px;box-shadow:2px 2px 0 #111;}
+
+/* =========================================================================
+   レスポンシブ（iPad想定 820px+）：ワイド化＋左サイドナビ
+   .cs-scr--flat（全画面フィット）時に有効化される想定
+   ========================================================================= */
+@media (min-width:820px){
+  .cs-scr--flat{flex-direction:row;}
+  .cs-scr--flat .cs-status{position:absolute;top:0;right:0;width:auto;}
+  .cs-scr--flat .cs-nav{
+    position:relative;left:auto;right:auto;bottom:auto;height:auto;width:220px;flex-shrink:0;
+    flex-direction:column;justify-content:flex-start;align-items:stretch;gap:8px;
+    border-radius:0;border-top:0;border-right:var(--nav-border,1px solid rgba(27,58,107,.1));padding:26px 16px;
+    order:-1;
+  }
+  .cs-scr--flat .cs-navitem{flex-direction:row;gap:12px;padding:12px 14px;border-radius:10px;font-size:15px;}
+  .cs-scr--flat .cs-navitem .pill{width:auto;height:auto;background:transparent;}
+  .cs-scr--flat .cs-navitem.is-on{background:var(--nav-active);color:#fff;}
+  .cs-scr--flat .cs-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .cs-scr--flat .cs-body{padding:8px 36px 40px;}
+  .cs-scr--flat .cs-grid--boxes{grid-template-columns:1.6fr 1fr 1fr;}
+}

@@ -11,6 +11,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { transferMoney } from "@/lib/money/rpc";
 import { BoxIcon } from "@/components/child/boxIcons";
 import { ConfirmPopup } from "@/components/child/ConfirmPopup";
+import { TransferAnimation } from "@/components/child/TransferAnimation";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 // transfer_money RPC(supabase/migrations/0001_init.sql)の例外メッセージを
@@ -151,6 +152,7 @@ export default function TransferPage() {
   const [to, setTo] = useState<AccountKind | null>(null);
   const [amount, setAmount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showAnim, setShowAnim] = useState(false);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(
     null,
@@ -194,17 +196,14 @@ export default function TransferPage() {
         setMessage({ kind: "error", text: mapRpcError(error.message) });
         return;
       }
-      setMessage({ kind: "ok", text: "うごかしました！" });
-      setAmount(0);
-      setFrom(null);
-      setTo(null);
+      setShowAnim(true);
       refetch();
       return;
     }
 
     const result = mockTransfer(themeKey, from, to, amount);
     if (result.ok) {
-      setMessage({ kind: "ok", text: "うごかしました！" });
+      setShowAnim(true);
       setAmount(0);
       setFrom(null);
       setTo(null);
@@ -358,6 +357,22 @@ export default function TransferPage() {
           cancelLabel="やめる"
           onConfirm={executeTransfer}
           onCancel={() => setShowLockConfirm(false)}
+        />
+      )}
+
+      {showAnim && from && to && (
+        <TransferAnimation
+          fromKind={from}
+          toKind={to}
+          amount={amount}
+          themeKey={themeKey}
+          onComplete={() => {
+            setShowAnim(false);
+            setMessage({ kind: "ok", text: "うごかしました！" });
+            setAmount(0);
+            setFrom(null);
+            setTo(null);
+          }}
         />
       )}
     </div>
