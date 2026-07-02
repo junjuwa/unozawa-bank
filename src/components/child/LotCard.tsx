@@ -1,55 +1,87 @@
-// HANDOFF.md §3-3: ふやす。ロットごと「あと◯かい ねたら」＋月の列＋プログレス＋満期額
-import { ChildTheme } from "@/lib/theme/childTheme";
-import { InvestLot } from "@/lib/mock/investLots";
+// ① LotCard — 運用ロット1件（ふやす画面）。index.html / rei-grow のテイストに準拠。
+// 既存 src/components/child/LotCard.tsx を丸ごと置換。純粋レンダリング（"use client" 不要）。
+import type { ChildTheme } from "@/lib/theme/childTheme";
+import type { InvestLot } from "@/lib/mock/investLots";
 
-export function LotCard({ theme, lot }: { theme: ChildTheme; lot: InvestLot }) {
-  const progress = Math.round(((lot.totalDays - lot.remainingDays) / lot.totalDays) * 100);
-  const moonCount = Math.min(lot.remainingDays, 10);
+const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"];
+
+export function LotCard({ theme, lot, index }: { theme: ChildTheme; lot: InvestLot; index?: number }) {
+  // ロット番号：index 優先、無ければ id 末尾の数字
+  const n = index != null ? index : (parseInt(String(lot.id).replace(/\D/g, "").slice(-1), 10) || 1) - 1;
+  const badge = "あずけ中" + (CIRCLED[n] ?? `${n + 1}`);
+
+  const interest = Math.max(0, lot.interestAmount - lot.principal);
+  const ratePct = lot.principal > 0 ? Math.round((interest / lot.principal) * 100) : 0;
+  const progress = lot.totalDays > 0 ? Math.min(100, Math.round(((lot.totalDays - lot.remainingDays) / lot.totalDays) * 100)) : 0;
+
+  const green = "#1B9E5A";
 
   return (
-    <div
-      style={{
-        background: theme.cardBg,
-        borderRadius: theme.cardRadius,
-        border: theme.cardBorder,
-        boxShadow: theme.cardShadow,
-        padding: 16,
-        color: theme.ink,
-        fontFamily: theme.fontFamily,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>あと</span>
-        <span style={{ fontWeight: 900, fontSize: 28, color: theme.accentInk }}>
-          {lot.remainingDays}
+    <div style={{
+      background: theme.cardBg,
+      borderRadius: theme.cardRadius,
+      boxShadow: theme.cardShadow,
+      border: theme.cardBorder,
+      padding: 18,
+      fontFamily: theme.fontFamily,
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+    }}>
+      {/* 上段：番号バッジ ＋ 運用中バッジ */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{
+          font: `700 12px ${theme.fontFamily}`,
+          color: theme.sub,
+          background: "rgba(27,158,90,.10)",
+          border: `1.5px solid rgba(27,158,90,.35)`,
+          borderRadius: 8,
+          padding: "3px 10px",
+        }}>{badge}</span>
+        <span style={{
+          marginLeft: "auto",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          font: `700 11px ${theme.fontFamily}`,
+          color: "#fff",
+          background: green,
+          borderRadius: 999,
+          padding: "4px 11px",
+        }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,4 20,14 4,14" /></svg>
+          運用中
         </span>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>かい ねたら</span>
       </div>
 
-      <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-        {Array.from({ length: moonCount }).map((_, i) => (
-          <span key={i} style={{ fontSize: 16 }}>
-            🌙
-          </span>
-        ))}
+      {/* 金額 */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 2, font: `900 16px ${theme.fontFamily}`, color: theme.ink }}>
+        ¥<span style={{ fontSize: 34, letterSpacing: "-.02em" }}>{lot.principal.toLocaleString()}</span>
       </div>
 
-      <div
-        style={{
-          height: 12,
-          borderRadius: 6,
-          background: theme.progressTrack,
-          overflow: "hidden",
-          marginBottom: 10,
-        }}
-      >
-        <div style={{ height: "100%", width: `${progress}%`, background: theme.progressFillGrow }} />
+      {/* 利息（満期にもらえる） */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, font: `700 13px ${theme.fontFamily}`, color: green }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,4 20,14 4,14" /></svg>
+        +¥{interest.toLocaleString()}（+{ratePct}%）
+        <span style={{ color: theme.sub, fontWeight: 700 }}>満期に もらえる</span>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-        <span>もとで {new Intl.NumberFormat("ja-JP").format(lot.principal)}えん</span>
-        <span style={{ fontWeight: 800, color: theme.accentInk }}>
-          まんきに もらえる {new Intl.NumberFormat("ja-JP").format(lot.interestAmount)}えん
+      {/* プログレスバー */}
+      <div style={{
+        height: 14,
+        borderRadius: theme.cardBorder && theme.cardBorder !== "none" ? 3 : 8,
+        background: "rgba(27,58,107,.12)",
+        border: theme.cardBorder && theme.cardBorder !== "none" ? "2px solid #111" : "none",
+        overflow: "hidden",
+      }}>
+        <div style={{ width: `${progress}%`, height: "100%", background: theme.progressFillGrow }} />
+      </div>
+
+      {/* 残日数 */}
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <span style={{ font: `700 12px ${theme.fontFamily}`, color: theme.sub }}>まんきまで</span>
+        <span style={{ marginLeft: "auto", display: "flex", alignItems: "baseline", gap: 2, font: `700 12px ${theme.fontFamily}`, color: theme.ink }}>
+          あと <b style={{ fontSize: 20, fontWeight: 900, color: green }}>{lot.remainingDays}</b> 日
         </span>
       </div>
     </div>

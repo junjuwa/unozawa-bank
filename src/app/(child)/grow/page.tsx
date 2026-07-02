@@ -5,6 +5,7 @@ import { childThemes } from "@/lib/theme/childTheme";
 import { INVEST_LOTS } from "@/lib/mock/investLots";
 import { useInvestmentLots } from "@/hooks/useInvestmentLots";
 import { LotCard } from "@/components/child/LotCard";
+import { GrowHintBanner } from "@/components/child/GrowHintBanner";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function GrowPage() {
@@ -16,11 +17,11 @@ export default function GrowPage() {
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <h1 style={{ fontWeight: 900, fontSize: 18, color: theme.ink }}>ふやす</h1>
+      <GrowHintBanner theme={theme} />
       {lots.length === 0 ? (
         <p style={{ color: theme.sub }}>まだ ふやしてないよ</p>
       ) : (
-        lots.map((lot) => <LotCard key={lot.id} theme={theme} lot={lot} />)
+        lots.map((lot, i) => <LotCard key={lot.id} theme={theme} lot={lot} index={i} />)
       )}
     </div>
   );
