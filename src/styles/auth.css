@@ -1,0 +1,90 @@
+/* =========================================================================
+   UNOZAWA BANK — 認証まわり 共有スタイル（ログイン / ユーザー選択）
+   使い方: この auth.css を読み込み、login.html / select-user.html の
+   <div class="au-screen"> ... </div> をそのまま画面に差し込む。
+   フォント: Zen Maru Gothic（CSS先頭で @import 済み）
+   ========================================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
+
+:root{
+  --au-ink:#1B3A6B;      /* 主テキスト（濃いネイビー） */
+  --au-sub:#2c6f96;      /* サブテキスト */
+  --au-cor:#FF7E6B;      /* 差し色コーラル */
+  --au-gold:#F5B62E;     /* ゴールド（ロゴ/アクセント） */
+  --au-jun:#E2231A;      /* じゅん（アメコミ・レッド） */
+  --au-parent:#2F353E;   /* おや（管理・ダークグレー） */
+}
+
+/* ---- 画面全体（縦フル・水彩トロピカル背景） ---- */
+.au-screen{
+  position:relative;
+  width:390px;height:844px;
+  border-radius:38px;overflow:hidden;
+  font-family:'Zen Maru Gothic',system-ui,sans-serif;
+  color:var(--au-ink);
+  background:linear-gradient(180deg,#CDEEFF 0%,#A6DEF7 48%,#8FD3F4 100%);
+  display:flex;flex-direction:column;
+}
+/* 埋め込み時に端末枠を出したくない場合は .au-screen--flat を併用 */
+.au-screen--flat{border-radius:0;width:100%;min-height:100vh;height:auto;box-shadow:none;}
+
+/* 水彩ブロブ装飾 */
+.au-blob{position:absolute;border-radius:54% 60% 52% 48%;filter:blur(1px);pointer-events:none;}
+.au-blob-1{top:-50px;right:-40px;width:210px;height:210px;background:rgba(255,255,255,.34);}
+.au-blob-2{top:180px;left:-60px;width:180px;height:180px;background:rgba(255,210,63,.20);filter:blur(2px);}
+.au-blob-3{bottom:120px;right:-50px;width:180px;height:180px;background:rgba(255,126,107,.17);filter:blur(2px);}
+.au-blob-4{bottom:250px;left:34px;width:90px;height:90px;background:rgba(255,255,255,.28);}
+
+.au-inner{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:0 30px;}
+
+/* ---- ロゴ（バッジ＋ワードマーク） ---- */
+.au-logo{width:104px;height:104px;border-radius:32px;background:#1B3A6B;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 16px 30px rgba(27,58,107,.3);}
+.au-wordmark{font:900 27px 'Zen Maru Gothic';color:#fff;letter-spacing:1px;text-align:center;line-height:1.15;}
+.au-wordmark small{display:block;font:700 12px 'Zen Maru Gothic';color:var(--au-gold);letter-spacing:4px;margin-top:2px;}
+
+/* ---- 見出し ---- */
+.au-title{font:900 24px 'Zen Maru Gothic';color:var(--au-ink);text-align:center;margin:0;}
+.au-lead{font:700 13px 'Zen Maru Gothic';color:var(--au-sub);text-align:center;line-height:2;margin:10px 0 0;}
+.au-lead ruby rt{font-size:.5em;font-weight:500;}
+
+/* ---- 主ボタン（パスキー認証） ---- */
+.au-btn{
+  width:100%;height:64px;border:0;border-radius:20px;background:var(--au-cor);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 12px 26px rgba(255,126,107,.45);
+  color:#fff;font:900 18px 'Zen Maru Gothic';cursor:pointer;
+}
+.au-btn:active{transform:translateY(1px);}
+.au-note{font:700 11px 'Zen Maru Gothic';color:var(--au-sub);text-align:center;margin:16px 0 0;display:flex;align-items:center;justify-content:center;gap:6px;opacity:.9;}
+
+/* ---- ステータスバー（飾り） ---- */
+.au-status{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 0;font:700 13px 'Zen Maru Gothic';color:var(--au-ink);}
+.au-status .r{letter-spacing:2px;}
+
+/* =========================================================================
+   ユーザー選択
+   ========================================================================= */
+.au-userlist{display:flex;flex-direction:column;gap:16px;width:100%;}
+.au-user{
+  display:flex;align-items:center;gap:16px;width:100%;
+  background:#fff;border:0;border-radius:24px;padding:16px 18px;cursor:pointer;
+  box-shadow:0 12px 26px rgba(27,58,107,.16);text-align:left;
+  border-left:8px solid var(--au-accent,#FF7E6B);
+}
+.au-user:active{transform:translateY(1px);}
+.au-user .au-name{font:900 22px 'Zen Maru Gothic';color:var(--au-ink);line-height:1.1;}
+.au-user .au-role{font:700 12px 'Zen Maru Gothic';color:var(--au-sub);margin-top:3px;}
+.au-user .au-chev{margin-left:auto;color:var(--au-accent,#FF7E6B);flex-shrink:0;}
+
+/* アバター枠（子供・画像差し込み可） */
+.au-avatar{
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;
+  border:3px solid #fff;box-shadow:0 6px 14px rgba(27,58,107,.2);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:var(--au-avatar-bg,#E4F5FF);
+}
+.au-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+/* おや＝アイコン表示（画像なし） */
+.au-avatar--parent{background:var(--au-parent);color:#fff;}
