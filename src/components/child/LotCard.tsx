@@ -3,12 +3,10 @@
 import type { ChildTheme } from "@/lib/theme/childTheme";
 import type { InvestLot } from "@/lib/mock/investLots";
 
-const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"];
-
-export function LotCard({ theme, lot, index }: { theme: ChildTheme; lot: InvestLot; index?: number }) {
-  // ロット番号：index 優先、無ければ id 末尾の数字
-  const n = index != null ? index : (parseInt(String(lot.id).replace(/\D/g, "").slice(-1), 10) || 1) - 1;
-  const badge = "あずけ中" + (CIRCLED[n] ?? `${n + 1}`);
+export function LotCard({ theme, lot, index, total }: { theme: ChildTheme; lot: InvestLot; index?: number; total?: number }) {
+  // 複数ロットがあるときのみ「N かい目」を付ける
+  const n = (index ?? 0) + 1;
+  const badge = (total ?? 1) > 1 ? `あずけ中 ${n}かい目` : "あずけ中";
 
   const interest = Math.max(0, lot.interestAmount - lot.principal);
   const ratePct = lot.principal > 0 ? Math.round((interest / lot.principal) * 100) : 0;
