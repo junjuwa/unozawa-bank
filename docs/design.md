@@ -1,45 +1,68 @@
-# おこづかい管理アプリ 設計提案（フェーズ1）
+# おこづかい管理アプリ 設計ドキュメント v1.0
 
-対象：れい（スティッチ風 / ハワイアンブルー＆ネイビー）・じゅん（スパイダーマン風 / レッド＆ブルー）兄弟向け
-構成：Next.js (App Router) + Tailwind CSS / Vercel / Supabase（DB・Auth・Storage）
+対象：れい・じゅん兄弟（小学1年）向けデジタルおこづかい管理  
+構成：Next.js 15 (App Router, TypeScript) + Tailwind CSS v4 / Vercel / Supabase
 
-> 子供向けUIのビジュアル正典は `docs/handoff/HANDOFF.md` ＋ `docs/handoff/Okozukai-Home.html`（命名はDBスキーマのrei_blue/jun_red/parent_dark・spend/save/growを正とし、表層トークンのみ取り込む。詳細は両ファイル参照）。
-
----
-
-## 0. 設計前に確定した技術的前提（2026年6月時点・調査済み）
-
-| 項目 | 結論 | 設計への影響 |
-|---|---|---|
-| パスキー認証 | Supabase Auth が beta で正式対応（2026/5/28）。`signInWithPasskey()` は discoverable credential 方式でメール入力不要 | 子供の「文字入力なしログイン」を実現可能。ただし **experimental opt-in が必要**、`@supabase/supabase-js v2.105.0+` 必須 |
-| パスキー登録 | 登録（`registerPasskey()`）は **ログイン済みセッションが前提** | 子供の初回パスキー登録は **親がブートストラップ**する動線が必要（後述 §5） |
-| 無料枠 pause | 7日間 DB 非活動で自動停止。**UIアクセスでなく実DBクエリ**でタイマーがリセット | 日次バッチが毎回 RPC（実クエリ）を投げる設計で回避可能 |
-| Vercel Cron (Hobby) | **1日1回まで**。起動は指定「時」内に分散（時刻ピッタリではない） | 満期判定は `matures_at <= now()` 比較。基本給支給も同じ日次cronに相乗りさせる |
-
-> 注：パスキーは beta のため opt-in フラグ名や挙動が変わる可能性があります。実装直前に公式docsで再確認してください。
+> **ビジュアル正典**：`docs/handoff/HANDOFF.md` + `docs/handoff/Okozukai-Home.html`  
+> コンポーネントの命名はDBスキーマ（rei_blue / jun_red / parent_dark・spend / save / grow）を正とし、表層トークンのみ取り込む。
 
 ---
 
-## 1. Supabase スキーマ設計（RLS・Storage 含む）
+## 0. 技術前提（確定済み）
+
+| 項目 | 結論 |
+|---|---|
+| パスキー認証 | Supabase Auth beta 正式対応（2026/5/28）。`signInWithPasskey()` は discoverable credential 方式でメール入力不要。`@supabase/supabase-js v2.105.0+` + experimental opt-in 必須 |
+| パスキー登録 | 登録（`registerPasskey()`）はログイン済みセッションが前提。初回は親がブートストラップ（§5参照） |
+| Supabase pause 回避 | 7日間 DB 非活動で自動停止。日次 cron が毎回 RPC を投げることでタイマーをリセット |
+| Vercel Cron (Hobby) | 1日1回まで。満期判定は `matures_at <= now()` 比較。満期処理＋基本給支給を1本の cron に相乗り |
+| PIN 認証 | パスキーログイン後、子供ごとに4桁 PIN でアプリ内ロック解除（`pgcrypto` で bcrypt ハッシュ保存） |
+
+---
+
+## 1. Supabase スキーマ
 
 ### 1.1 設計方針
 
-- **家族（family）単位のマルチテナント**。親と兄弟は同じ `family_id` を共有し、RLS は「自分のデータ」または「同じ家族の親」で判定。
-- **残高は3つの口座（つかう/ためる/ふやす）を各子供が1行ずつ保有**し、`accounts.balance` を正とする。
-- **お金の移動はすべて SECURITY DEFINER の RPC 経由**にし、テーブルへの直接 INSERT/UPDATE はクライアントに開放しない。これにより「残高マイナス」「台帳の不整合」「他人の残高改ざん」を構造的に防止。
-- **`transactions` を台帳（監査ログ）**として全移動を記録。
+- **家族（family）単位のマルチテナント**。RLS は「自分のデータ」または「同じ家族の親」で判定。
+- **残高は 3 口座（spend / save / grow）を子供ごとに 1 行ずつ**保有。`accounts.balance` が正値。
+- **お金の移動はすべて SECURITY DEFINER の RPC 経由**。`accounts` / `transactions` / `investment_lots` へのクライアント直接書込は RLS で禁止。
+- `transactions` を**全移動の台帳（監査ログ）**として記録。
 
 ### 1.2 ER 概要
 
 ```
-families ──< profiles ──< accounts        (つかう/ためる/ふやす)
-                 │     ├─< transactions     (全お金移動の台帳)
-                 │     ├─< investment_lots  (ふやすの30日タイマー単位)
-                 │     └─< job_requests >── job_tasks
-                 └──── family_settings      (基本給・金利・満期日数・約束)
+families ──< profiles ──< accounts         (spend / save / grow 各1行)
+                │      ├─< transactions    (全お金移動の台帳)
+                │      ├─< investment_lots (ふやすの30日タイマー単位)
+                │      ├─< job_requests >── job_tasks
+                │      └─< goals          (ほしいもの目標)
+                └───── family_settings     (金利・満期日数・約束)
 ```
 
-### 1.3 テーブル定義（SQL）
+> `profiles.base_salary`（子供ごとの基本給）・`profiles.pin_hash`（PIN）・`profiles.avatar_url`・`profiles.mascot_url` は profiles テーブルに直接カラムとして持つ。
+
+### 1.3 マイグレーション一覧
+
+| ファイル | 内容 |
+|---|---|
+| `0001_init.sql` | 全テーブル・RLS・ヘルパー関数・`transfer_money` / `approve_job_request` RPC |
+| `0002_monthly_salary.sql` | `pay_base_salary()`（cron 専用）・`vercel.json` cron 設定 |
+| `0003_spend_money.sql` | `spend_money(p_profile_id, p_amount, p_memo)` RPC（親がダッシュボードから子の支出を記録） |
+| `0004_job_requests_extras.sql` | `reject_job_request()` RPC・`job_requests` への `condition` カラム追加 |
+| `0005_goals.sql` | `goals` テーブル・RLS（子は自分の行を直接 insert/update/delete 可） |
+| `0006_per_child_salary.sql` | `profiles.base_salary`（子供ごと）・`profiles.mascot_url`・`pay_salary_now()` RPC（親が即時支給）・`pay_base_salary()` を `profiles.base_salary` 参照に更新 |
+| `0007_pay_custom_amount.sql` | `pay_custom_amount(p_profile_id, p_amount)` RPC（親が任意額を即時支給） |
+| `0008_get_family_job_requests.sql` | `get_family_job_requests()` RPC（親が家族全員の申請を取得） |
+| `0009_fix_get_family_job_requests.sql` | 上記の戻り型修正 |
+| `0010_pin_auth.sql` | `profiles.pin_hash`・`set_pin()` / `verify_pin()` RPC（pgcrypto bcrypt） |
+| `0011_fix_pin_functions.sql` | PIN 関数の search_path / 権限修正 |
+| `0012_verify_pin_for.sql` | `verify_pin_for(p_profile_id, p_pin)` RPC（他ユーザーの PIN 検証。ユーザー切替時に使用） |
+| `0013_get_family_members.sql` | `get_family_members()` RPC（家族メンバー一覧＋PINハッシュ有無フラグを返す） |
+| `0014_fix_get_family_members.sql` | 上記の戻り型修正 |
+| `0015_storage_avatars_rls.sql` | `avatars` Storage バケットの RLS ポリシー（家族内読取・親のみ書込） |
+
+### 1.4 テーブル定義（主要カラムのみ）
 
 ```sql
 -- 家族
@@ -51,109 +74,107 @@ create table public.families (
 
 -- プロフィール（auth.users と 1:1）
 create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  family_id uuid not null references public.families(id),
-  role text not null check (role in ('parent','child')),
-  display_name text not null,                       -- れい / じゅん / おとうさん
-  theme_key text not null default 'parent_dark'
-    check (theme_key in ('rei_blue','jun_red','parent_dark')),
-  avatar_url text,
-  created_at timestamptz not null default now()
+  id          uuid primary key references auth.users(id) on delete cascade,
+  family_id   uuid not null references public.families(id),
+  role        text not null check (role in ('parent','child')),
+  display_name text not null,
+  theme_key   text not null default 'parent_dark'
+                check (theme_key in ('rei_blue','jun_red','parent_dark')),
+  avatar_url  text,
+  mascot_url  text,
+  base_salary integer not null default 0,   -- 子供ごとの基本給（月1回支給）
+  pin_hash    text,                          -- bcrypt ハッシュ（null = PIN未設定）
+  created_at  timestamptz not null default now()
 );
 
--- 3つの口座（子供ごとに spend/save/grow の3行）
+-- 3つの口座
 create table public.accounts (
-  id uuid primary key default gen_random_uuid(),
+  id         uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
-  kind text not null check (kind in ('spend','save','grow')), -- つかう/ためる/ふやす
-  balance integer not null default 0 check (balance >= 0),    -- 円（整数）
+  kind       text not null check (kind in ('spend','save','grow')),
+  balance    integer not null default 0 check (balance >= 0),
   updated_at timestamptz not null default now(),
   unique (profile_id, kind)
 );
 
--- 台帳（全お金移動の記録）
+-- 台帳
 create table public.transactions (
-  id uuid primary key default gen_random_uuid(),
+  id         uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
-  type text not null check (type in ('salary','job_reward','transfer','interest')),
-  amount integer not null,
-  from_kind text check (from_kind in ('spend','save','grow')),
-  to_kind   text check (to_kind   in ('spend','save','grow')),
-  memo text,
+  type       text not null check (type in ('salary','job_reward','transfer','interest','spend')),
+  amount     integer not null,
+  from_kind  text check (from_kind in ('spend','save','grow')),
+  to_kind    text check (to_kind   in ('spend','save','grow')),
+  memo       text,
   created_at timestamptz not null default now()
 );
 
--- 投資ロット（ふやすへ移動した金額ごとの30日タイマー）
+-- 投資ロット（ふやす30日タイマー）
 create table public.investment_lots (
-  id uuid primary key default gen_random_uuid(),
-  profile_id uuid not null references public.profiles(id) on delete cascade,
-  principal integer not null check (principal > 0),  -- 元本
-  interest_rate numeric(5,4) not null,               -- 0.1000 = 10%（作成時にスナップショット）
-  interest_amount integer not null,                  -- 満期に付与する利息（作成時に確定）
-  started_at timestamptz not null default now(),
-  matures_at timestamptz not null,                   -- started_at + maturity_days
-  status text not null default 'active' check (status in ('active','matured')),
-  matured_at timestamptz
+  id              uuid primary key default gen_random_uuid(),
+  profile_id      uuid not null references public.profiles(id) on delete cascade,
+  principal       integer not null check (principal > 0),
+  interest_rate   numeric(5,4) not null,
+  interest_amount integer not null,
+  started_at      timestamptz not null default now(),
+  matures_at      timestamptz not null,
+  status          text not null default 'active' check (status in ('active','matured')),
+  matured_at      timestamptz
 );
 
--- お仕事マスタ（親が単価設定）
+-- お仕事マスタ
 create table public.job_tasks (
-  id uuid primary key default gen_random_uuid(),
+  id        uuid primary key default gen_random_uuid(),
   family_id uuid not null references public.families(id) on delete cascade,
-  name text not null,                  -- へやのかたづけ / せんたくもののかたづけ
-  reward integer not null check (reward >= 0),
+  name      text not null,
+  reward    integer not null check (reward >= 0),
+  condition text,          -- できたら申請の条件（任意）
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
 
--- お仕事申請（子→親承認）
+-- お仕事申請
 create table public.job_requests (
-  id uuid primary key default gen_random_uuid(),
-  profile_id uuid not null references public.profiles(id) on delete cascade, -- 申請した子
-  task_id uuid not null references public.job_tasks(id),
-  reward_snapshot integer not null,    -- 申請時点の単価を固定
-  status text not null default 'pending' check (status in ('pending','approved','rejected')),
-  requested_at timestamptz not null default now(),
-  decided_at timestamptz,
-  decided_by uuid references public.profiles(id)
+  id              uuid primary key default gen_random_uuid(),
+  profile_id      uuid not null references public.profiles(id) on delete cascade,
+  task_id         uuid not null references public.job_tasks(id),
+  reward_snapshot integer not null,
+  status          text not null default 'pending' check (status in ('pending','approved','rejected')),
+  requested_at    timestamptz not null default now(),
+  decided_at      timestamptz,
+  decided_by      uuid references public.profiles(id)
 );
 
--- 家族ごとのパラメータ＆約束
+-- 家族設定
 create table public.family_settings (
-  family_id uuid primary key references public.families(id) on delete cascade,
-  base_salary integer not null default 0,        -- 基本給（円）
-  salary_weekday integer not null default 1,     -- 0=日 .. 6=土（基本給の支給曜日）
-  investment_rate numeric(5,4) not null default 0.1000,  -- 投資金利
-  maturity_days integer not null default 30,     -- 満期日数
-  promises jsonb not null default '[]'::jsonb,   -- ぜったいのやくそく（ひらがな配列）
-  updated_at timestamptz not null default now()
+  family_id       uuid primary key references public.families(id) on delete cascade,
+  base_salary     integer not null default 0,    -- 旧フィールド（profiles.base_salaryに移行済み）
+  investment_rate numeric(5,4) not null default 0.0200,
+  maturity_days   integer not null default 30,
+  promises        jsonb not null default '[]'::jsonb,
+  updated_at      timestamptz not null default now()
 );
 
--- 目標（ほしいもの）。0005_goals.sqlで追加。お金は動かさないため
--- 子が自分の行を直接insert/update/deleteできるRLSにする（RPC不要）。
+-- 目標（ほしいもの）
 create table public.goals (
-  id uuid primary key default gen_random_uuid(),
+  id         uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
-  name text not null,
-  target integer not null check (target > 0),
-  active boolean not null default false,           -- 1人につき常に高々1件がtrue（「いま ためてる」）
-  image_url text,
-  position integer not null default 0,             -- 並び順（子が↑↓で入れ替える）
+  name       text not null,
+  target     integer not null check (target > 0),
+  active     boolean not null default false,
+  image_url  text,
+  position   integer not null default 0,
   created_at timestamptz not null default now()
 );
 ```
 
-### 1.4 ヘルパー関数（RLS 再帰回避のため SECURITY DEFINER）
-
-`profiles` の RLS の中で `profiles` を参照すると無限再帰になるため、RLS をバイパスする SECURITY DEFINER 関数で判定する（Supabase の定番パターン）。
+### 1.5 ヘルパー関数
 
 ```sql
+-- RLS 再帰回避のため SECURITY DEFINER
 create or replace function public.is_parent()
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'parent'
-  );
+  select exists (select 1 from public.profiles where id = auth.uid() and role = 'parent');
 $$;
 
 create or replace function public.my_family_id()
@@ -162,394 +183,294 @@ returns uuid language sql stable security definer set search_path = public as $$
 $$;
 ```
 
-### 1.5 RLS ポリシー
+### 1.6 RLS ポリシー方針
 
-```sql
-alter table public.families         enable row level security;
-alter table public.profiles         enable row level security;
-alter table public.accounts         enable row level security;
-alter table public.transactions     enable row level security;
-alter table public.investment_lots  enable row level security;
-alter table public.job_tasks        enable row level security;
-alter table public.job_requests     enable row level security;
-alter table public.family_settings  enable row level security;
+| テーブル | 読取 | 書込 |
+|---|---|---|
+| `profiles` | 自分 or 同family親 | 自分 or 同family親（update のみ） |
+| `accounts` | 自分 or 同family親 | **クライアント禁止**（RPC 経由のみ） |
+| `transactions` | 自分 or 同family親 | **クライアント禁止** |
+| `investment_lots` | 自分 or 同family親 | **クライアント禁止** |
+| `job_tasks` | 同family全員 | 親のみ（直接 insert/update/delete 可） |
+| `job_requests` | 自分 or 同family親 | 子が pending で insert、承認/却下は RPC 経由 |
+| `family_settings` | 同family全員 | 親のみ（直接 update 可） |
+| `goals` | 自分 or 同family親 | 子が自分の行を直接 insert/update/delete 可 |
 
--- profiles：自分 or 同じ家族の親
-create policy "profiles_select" on public.profiles for select
-  using ( id = auth.uid() or (is_parent() and family_id = my_family_id()) );
-create policy "profiles_update" on public.profiles for update
-  using ( id = auth.uid() or (is_parent() and family_id = my_family_id()) );
+### 1.7 主要 RPC 一覧
 
--- accounts：参照のみ開放。書込は RPC / service role 経由のみ（INSERT/UPDATE ポリシーを作らない）
-create policy "accounts_select" on public.accounts for select
-  using ( profile_id = auth.uid()
-       or (is_parent() and profile_id in
-            (select id from public.profiles where family_id = my_family_id())) );
+| RPC | 呼び出し元 | 概要 |
+|---|---|---|
+| `transfer_money(p_from, p_to, p_amount)` | 子（authenticated） | 口座間振替。grow は出金ロック。→grow 時にロット生成 |
+| `approve_job_request(p_request_id)` | 親（authenticated） | 承認 → spend に入金 |
+| `reject_job_request(p_request_id)` | 親（authenticated） | 却下のみ（残高操作なし） |
+| `spend_money(p_profile_id, p_amount, p_memo)` | 親（authenticated） | 子の spend から支出記録（ダッシュボードから操作） |
+| `pay_salary_now(p_profile_id)` | 親（authenticated） | profiles.base_salary を即時支給 |
+| `pay_custom_amount(p_profile_id, p_amount)` | 親（authenticated） | 任意額を spend に即時支給 |
+| `pay_base_salary()` | cron（service role） | 毎月1日に全子供へ基本給支給 |
+| `process_matured_investments()` | cron（service role） | matures_at <= now() のロットを満期処理（grow→save） |
+| `set_pin(p_profile_id, p_pin)` | 親 or 本人 | PIN を bcrypt ハッシュ化して保存 |
+| `verify_pin(p_pin)` | 本人 | 自分の PIN 検証 |
+| `verify_pin_for(p_profile_id, p_pin)` | 親 | 他ユーザーの PIN 検証（ユーザー切替時） |
+| `get_family_job_requests()` | 親 | 家族全員の申請一覧を返す |
+| `get_family_members()` | 親 | 家族メンバー一覧 + has_pin フラグを返す |
 
--- transactions：参照のみ
-create policy "tx_select" on public.transactions for select
-  using ( profile_id = auth.uid()
-       or (is_parent() and profile_id in
-            (select id from public.profiles where family_id = my_family_id())) );
+### 1.8 Storage（avatars バケット）
 
--- investment_lots：参照のみ
-create policy "lots_select" on public.investment_lots for select
-  using ( profile_id = auth.uid()
-       or (is_parent() and profile_id in
-            (select id from public.profiles where family_id = my_family_id())) );
-
--- job_tasks：家族内は閲覧、変更は親のみ
-create policy "tasks_select" on public.job_tasks for select
-  using ( family_id = my_family_id() );
-create policy "tasks_write_parent" on public.job_tasks for all
-  using      ( is_parent() and family_id = my_family_id() )
-  with check ( is_parent() and family_id = my_family_id() );
-
--- job_requests：参照=自分/親、申請=子(自分)、承認=親（RPC経由）
-create policy "req_select" on public.job_requests for select
-  using ( profile_id = auth.uid()
-       or (is_parent() and profile_id in
-            (select id from public.profiles where family_id = my_family_id())) );
-create policy "req_insert_child" on public.job_requests for insert
-  with check ( profile_id = auth.uid() and status = 'pending' );
-
--- family_settings：家族内閲覧、変更は親のみ
-create policy "settings_select" on public.family_settings for select
-  using ( family_id = my_family_id() );
-create policy "settings_update_parent" on public.family_settings for update
-  using ( is_parent() and family_id = my_family_id() );
-```
-
-> ポイント：`accounts` / `transactions` / `investment_lots` に **書込ポリシーをあえて作らない**ことで、クライアントからの直接改ざんを禁止。お金が動くのは下記 RPC か、cron の service role からのみ。
-
-### 1.6 主要ロジック（お金の移動 RPC）
-
-**① 口座間振替（子が自分のお金を動かす）**
-
-```sql
-create or replace function public.transfer_money(p_from text, p_to text, p_amount integer)
-returns void language plpgsql security definer set search_path = public as $$
-declare
-  v_profile uuid := auth.uid();
-  v_rate numeric; v_days integer;
-begin
-  if p_amount <= 0     then raise exception 'amount must be positive'; end if;
-  if p_from = p_to     then raise exception 'same account';           end if;
-  -- ふやす は満期までロック（§4 の判断ポイント参照。早期引き出しを許すならこの行を外す）
-  if p_from = 'grow'   then raise exception 'grow is locked';         end if;
-
-  -- 出金（残高不足ならここで弾く）
-  update public.accounts set balance = balance - p_amount, updated_at = now()
-   where profile_id = v_profile and kind = p_from and balance >= p_amount;
-  if not found then raise exception 'insufficient balance'; end if;
-
-  -- 入金
-  update public.accounts set balance = balance + p_amount, updated_at = now()
-   where profile_id = v_profile and kind = p_to;
-
-  insert into public.transactions(profile_id, type, amount, from_kind, to_kind)
-  values (v_profile, 'transfer', p_amount, p_from, p_to);
-
-  -- つかう→ふやす なら30日タイマー（ロット）を作成
-  if p_to = 'grow' then
-    select s.investment_rate, s.maturity_days into v_rate, v_days
-      from public.family_settings s
-      join public.profiles pr on pr.family_id = s.family_id
-     where pr.id = v_profile;
-
-    insert into public.investment_lots(profile_id, principal, interest_rate, interest_amount, matures_at)
-    values (v_profile, p_amount, v_rate, floor(p_amount * v_rate),
-            now() + (v_days || ' days')::interval);
-  end if;
-end;
-$$;
-grant execute on function public.transfer_money(text,text,integer) to authenticated;
-```
-
-**② お仕事承認（親）→「つかう」へ入金**
-
-```sql
-create or replace function public.approve_job_request(p_request_id uuid)
-returns void language plpgsql security definer set search_path = public as $$
-declare r record;
-begin
-  if not is_parent() then raise exception 'forbidden'; end if;
-
-  select * into r from public.job_requests where id = p_request_id and status = 'pending';
-  if not found then raise exception 'request not found'; end if;
-  if not exists (select 1 from public.profiles
-                 where id = r.profile_id and family_id = my_family_id())
-    then raise exception 'forbidden'; end if;
-
-  update public.job_requests
-     set status='approved', decided_at=now(), decided_by=auth.uid()
-   where id = p_request_id;
-
-  update public.accounts set balance = balance + r.reward_snapshot, updated_at = now()
-   where profile_id = r.profile_id and kind = 'spend';   -- 入金はすべて「つかう」へ
-
-  insert into public.transactions(profile_id, type, amount, to_kind, memo)
-  values (r.profile_id, 'job_reward', r.reward_snapshot, 'spend', 'おしごと しょうにん');
-end;
-$$;
-grant execute on function public.approve_job_request(uuid) to authenticated;
-```
-
-**③ 満期処理（cron が service role で呼ぶ）→ 元本+利息を「ためる」へ**
-
-```sql
-create or replace function public.process_matured_investments()
-returns integer language plpgsql security definer set search_path = public as $$
-declare cnt integer := 0; lot record;
-begin
-  for lot in
-    select * from public.investment_lots
-     where status = 'active' and matures_at <= now()
-     for update
-  loop
-    update public.accounts set balance = balance - lot.principal, updated_at = now()
-     where profile_id = lot.profile_id and kind = 'grow';
-    update public.accounts set balance = balance + lot.principal + lot.interest_amount, updated_at = now()
-     where profile_id = lot.profile_id and kind = 'save';
-
-    update public.investment_lots set status='matured', matured_at=now() where id = lot.id;
-
-    insert into public.transactions(profile_id, type, amount, from_kind, to_kind, memo)
-    values (lot.profile_id, 'interest', lot.principal + lot.interest_amount, 'grow', 'save', 'まんき！りそく');
-    cnt := cnt + 1;
-  end loop;
-  return cnt;     -- 0件でもこの SELECT 自体が pause 回避の活動になる
-end;
-$$;
-```
-
-**④ 基本給支給（cron が支給曜日に呼ぶ）**
-
-```sql
-create or replace function public.pay_base_salary()
-returns integer language plpgsql security definer set search_path = public as $$
-declare cnt integer := 0; rec record;
-begin
-  for rec in
-    select p.id as profile_id, s.base_salary
-      from public.profiles p
-      join public.family_settings s on s.family_id = p.family_id
-     where p.role = 'child' and s.base_salary > 0
-       and extract(dow from (now() at time zone 'Asia/Tokyo')) = s.salary_weekday
-  loop
-    update public.accounts set balance = balance + rec.base_salary, updated_at = now()
-     where profile_id = rec.profile_id and kind = 'spend';
-    insert into public.transactions(profile_id, type, amount, to_kind, memo)
-    values (rec.profile_id, 'salary', rec.base_salary, 'spend', 'きほんきゅう');
-    cnt := cnt + 1;
-  end loop;
-  return cnt;
-end;
-$$;
-```
-
-> ③④はクライアントに `grant` せず、cron の **service role キー**からのみ呼ぶ。
-
-### 1.7 Storage（バケット）設計
-
-- **バケット名：`avatars`**（キャラクター/アイコン画像）
-- **パス規約：`avatars/{family_id}/{profile_id}.png`** … 上書き更新が自然で、家族単位の整理もしやすい
-- **書込は親のみ／読取は family 内**（プライバシー重視なら非公開＋署名URL推奨）
-
-```sql
-insert into storage.buckets (id, name, public) values ('avatars', 'avatars', false);
-
--- 読取：認証済みかつ自分の家族のフォルダのみ（署名URL or createSignedUrl で表示）
-create policy "avatars_read" on storage.objects for select
-  using ( bucket_id = 'avatars'
-          and (storage.foldername(name))[1] = my_family_id()::text );
-
--- 書込/更新：親のみ
-create policy "avatars_write_parent" on storage.objects for insert
-  with check ( bucket_id = 'avatars' and public.is_parent()
-               and (storage.foldername(name))[1] = my_family_id()::text );
-create policy "avatars_update_parent" on storage.objects for update
-  using ( bucket_id = 'avatars' and public.is_parent()
-          and (storage.foldername(name))[1] = my_family_id()::text );
-```
-
-> トレードオフ：`public: true` の公開バケットにすると `<img src>` がそのまま使えて実装は楽ですが、URLを知れば誰でも見られます。家族写真ではなくキャラクター画像なので公開でも実害は小さい一方、子供のアプリという性質上は**非公開＋署名URL**を推奨しました。どちらにするかは §4 で要判断。
+- **バケット名：`avatars`**（非公開）
+- **パス：`avatars/{family_id}/{profile_id}.png`**
+- 読取：認証済みかつ同family。書込：親のみ。
+- avatar_url は `https://` URL のみ `profiles.avatar_url` に保存（data: URL は localStorage QuotaExceeded 防止のため除外）。
 
 ---
 
 ## 2. Vercel Cron 日次バッチ
 
-### 2.1 `vercel.json`
-
 ```json
-{
-  "crons": [
-    { "path": "/api/cron/daily", "schedule": "0 0 * * *" }
-  ]
-}
+// vercel.json
+{ "crons": [{ "path": "/api/cron/daily", "schedule": "0 0 * * *" }] }
 ```
 
-- `0 0 * * *` = 毎日 00:00 **UTC**（= 09:00 JST）。
-- Hobby は1日1回が上限。起動は 00:00〜00:59 UTC の間に分散されるため、**満期判定は時刻ではなく `matures_at <= now()` で行う**（§1.6③で対応済み）。
-- 1本のcronで「満期処理＋基本給＋pause回避」を兼ねるのが、Hobby制約下では最も効率的。
+`src/app/api/cron/daily/route.ts` が `CRON_SECRET` を検証後、service role クライアントで以下を順に実行：
 
-### 2.2 Route Handler（`src/app/api/cron/daily/route.ts`）
+1. `process_matured_investments()` — 満期ロットを grow → save に移動
+2. `pay_base_salary()` — 毎月1日のみ基本給支給
+
+この RPC 呼び出し自体が Supabase の pause 回避クエリを兼ねる。
+
+---
+
+## 3. Next.js ディレクトリ構成
+
+```
+src/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx          # ユーザー選択（れい/じゅん/おや）→ パスキー認証
+│   │   └── parent-login/page.tsx   # 親：email + password
+│   │
+│   ├── (child)/                    # パスキー + PIN 認証必須
+│   │   ├── layout.tsx              # FrameDecoration + ChildHeader + BottomNav/SideNav
+│   │   ├── home/page.tsx           # BalanceCard ×3（spend/save/grow）+ Mascot
+│   │   ├── transfer/page.tsx       # 口座間振替（TransferAnimation）
+│   │   ├── grow/page.tsx           # GrowHintBanner + LotCard 一覧 + あずけるボタン
+│   │   ├── goals/page.tsx          # GoalCard 一覧 + GoalCelebration + 追加フォーム
+│   │   ├── jobs/page.tsx           # JobCard 一覧 + 申請（ConditionPopup）
+│   │   ├── history/page.tsx        # 支出履歴一覧
+│   │   └── rules/page.tsx          # RuleCard（固定ルール + family_settings.promises）
+│   │
+│   ├── (parent)/                   # 親専用（ダークUI）
+│   │   ├── layout.tsx
+│   │   ├── dashboard/page.tsx      # KpiCard ×4 + ChildSummaryCard + WeeklyMiniGraph
+│   │   ├── approvals/page.tsx      # ApprovalCard 一覧（承認/却下）
+│   │   ├── activity/page.tsx       # 家族全体の活動ログ
+│   │   ├── avatars/page.tsx        # アバター・マスコット画像アップロード（Storage）
+│   │   ├── settings/page.tsx       # 基本給・金利・満期日数・今すぐ支給
+│   │   ├── settings/jobs/page.tsx  # お仕事マスタ CRUD
+│   │   ├── settings/promises/page.tsx # やくそく CRUD
+│   │   └── setup/page.tsx          # 子のパスキー登録ブートストラップ
+│   │
+│   └── api/
+│       ├── cron/daily/route.ts     # Vercel Cron（満期処理 + 基本給）
+│       └── admin/create-child/route.ts  # 子アカウント作成（service role）
+│
+├── components/
+│   ├── child/
+│   │   ├── BalanceCard.tsx         # spend/save/grow の残高カード（featured/compact）
+│   │   ├── BottomNav.tsx           # モバイル下部ナビ
+│   │   ├── SideNav.tsx             # タブレット左サイドナビ
+│   │   ├── ChildHeader.tsx         # アバター + 名前 + BalanceBadge（もってる）
+│   │   ├── FrameDecoration.tsx     # テーマ別背景装飾（rei=水彩ブロブ / jun=ハーフトーン）
+│   │   ├── Coin.tsx / CoinRow.tsx  # コインアイコン（themeKey で金色variant切替）
+│   │   ├── GoalCard.tsx            # 目標カード（プログレス + たっせいボタン）
+│   │   ├── GoalCelebration.tsx     # 目標達成コンフェッティオーバーレイ
+│   │   ├── GrowHintBanner.tsx      # ふやすページ最上部ヒント帯
+│   │   ├── JobCard.tsx             # お仕事カード（申請 + ConditionPopup）
+│   │   ├── LotCard.tsx             # 投資ロットカード（M/D〜 日付バッジ + 進捗）
+│   │   ├── Mascot.tsx              # マスコット表示
+│   │   ├── RuleCard.tsx            # ルール表示カード
+│   │   ├── RubyText.tsx            # ルビ付きテキスト
+│   │   ├── TransferAnimation.tsx   # 振替完了アークアニメーション
+│   │   ├── ConditionPopup.tsx      # お仕事の条件説明ポップアップ
+│   │   └── ConfirmPopup.tsx        # 確認ダイアログ（ふやすロック警告等）
+│   │
+│   ├── parent/
+│   │   ├── ApprovalCard.tsx        # 承認待ちカード
+│   │   ├── ChildSummaryCard.tsx    # ダッシュボードの子供サマリ
+│   │   ├── KpiCard.tsx             # KPI 表示カード
+│   │   ├── SpendForm.tsx           # 支出記録フォーム
+│   │   ├── WeeklyMiniGraph.tsx     # 週次貯金グラフ（div実装、rei/jun 2系列）
+│   │   └── SettingRow.tsx          # 設定行コンポーネント
+│   │
+│   └── ui/
+│       ├── LoadingScreen.tsx       # ローディング表示
+│       ├── PinGate.tsx             # PIN 認証ゲート（子供ページ全体をラップ）
+│       ├── PinScreen.tsx           # PIN 入力画面
+│       ├── UserSwitchModal.tsx     # ユーザー切替モーダル
+│       ├── PullToRefresh.tsx       # プルトゥリフレッシュ
+│       └── ThemeToggleMock.tsx     # 開発用テーマ切替トグル
+│
+├── hooks/
+│   ├── useProfile.ts               # ログイン中プロフィール
+│   ├── useAccounts.ts              # 残高3口座（未ログイン時 null）
+│   ├── useGoals.ts                 # 目標一覧
+│   ├── useInvestmentLots.ts        # 投資ロット（startedAt 含む）
+│   ├── useJobCatalog.ts            # お仕事マスタ（子供用・参照のみ）
+│   ├── useJobCatalogAdmin.ts       # お仕事マスタ（親用・CRUD）
+│   ├── useJobRequests.ts           # 自分の申請一覧（子）/ 家族の申請一覧（親）
+│   ├── useTransactions.ts          # 支出履歴
+│   ├── useFamilyOverview.ts        # ダッシュボード横断集計
+│   ├── useFamilySettings.ts        # family_settings
+│   ├── useFamilyMembers.ts         # 家族メンバー一覧（ユーザー切替用）
+│   └── useFamilyActivity.ts        # 家族全体の活動ログ
+│
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts               # ブラウザ用（passkey experimental opt-in）
+│   │   ├── server.ts               # Server Component / Route Handler 用
+│   │   └── admin.ts                # service role（cron + 子アカウント作成専用）
+│   ├── auth/passkey.ts             # signInWithPasskey / registerPasskey ラッパ
+│   ├── money/rpc.ts                # 全 RPC 呼び出しラッパ
+│   ├── goals/api.ts                # goals テーブル直接操作（addGoal等）
+│   ├── theme/
+│   │   ├── themes.ts               # ThemeKey 型（rei_blue / jun_red / parent_dark）
+│   │   ├── childTheme.ts           # ChildTheme オブジェクト定義（全視覚トークン）
+│   │   └── MockChildThemeContext.tsx # 開発用テーマ切替 Context
+│   └── mock/                       # 未ログイン時フォールバック用モックデータ
+│       ├── MockProviders.tsx
+│       ├── MockBalancesContext.tsx
+│       ├── MockGoalsContext.tsx
+│       ├── MockJobsContext.tsx
+│       ├── MockSettingsContext.tsx
+│       ├── MockAvatarsContext.tsx
+│       ├── MockMascotContext.tsx
+│       └── investLots.ts / jobCatalog.ts / jobsMock.ts / rulesMock.ts
+│
+├── middleware.ts                    # セッション更新 + 親ルート保護
+└── types/db.ts                     # supabase gen types 生成ファイル
+```
+
+---
+
+## 4. テーマシステム
+
+### 4.1 ThemeKey とトークン
+
+3テーマを `src/lib/theme/childTheme.ts` の `ChildTheme` オブジェクトで管理。CSS 変数ではなく **inline style** で各コンポーネントに注入（Tailwind ビルドを分けない）。
+
+| ThemeKey | テイスト | フォント |
+|---|---|---|
+| `rei_blue` | 水彩トロピカル・大角丸・やわ影 | Zen Maru Gothic |
+| `jun_red` | アメコミ・太黒枠・ハード影 | RocknRoll One |
+| `parent_dark` | ダークグレー管理UI | システムフォント |
+
+### 4.2 主なトークン
 
 ```ts
-import { NextRequest } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
-
-export const runtime = 'nodejs';        // service role を使うため Edge 不可
-export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
-
-export async function GET(req: NextRequest) {
-  // Vercel Cron が自動付与する Authorization: Bearer <CRON_SECRET> を検証
-  const auth = req.headers.get('authorization');
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const supabase = createAdminClient();   // service role（RLS バイパス）
-
-  // ① 満期投資 → 元本+利息を「ためる」へ
-  const { data: matured, error: e1 } = await supabase.rpc('process_matured_investments');
-  // ② 基本給：支給曜日なら支給
-  const { data: paid, error: e2 } = await supabase.rpc('pay_base_salary');
-  // ↑ この実クエリ自体が「DBアクセス」となり、無料枠の7日pauseを回避する
-
-  if (e1 || e2) return Response.json({ ok: false, e1, e2 }, { status: 500 });
-  return Response.json({ ok: true, matured, paid, ranAt: new Date().toISOString() });
+interface ChildTheme {
+  fontFamily: string;
+  headingWeight: number;
+  frameBg: string;          // ページ背景グラデーション
+  ink: string;              // メインテキスト色
+  sub: string;              // サブテキスト色
+  accent: string;           // アクセント色
+  accentInk: string;        // アクセントの文字色
+  cardBg: string;
+  cardRadius: number;
+  cardShadow: string;
+  cardBorder: string;       // jun = "3px solid #111"、rei = "none"
+  progressTrack: string;
+  progressFill: string;     // ためる用プログレス
+  progressFillGrow: string; // ふやす用プログレス（緑系）
+  navActive: string;
+  navActiveBg: string;
+  navIdle: string;
+  coin: "gold-soft" | "gold-hard" | "none";
 }
 ```
 
-### 2.3 service role クライアント（`src/lib/supabase/admin.ts`）
+### 4.3 背景装飾（FrameDecoration）
+
+`src/components/child/FrameDecoration.tsx` が `themeKey` に応じて `position:absolute; z-index:0` の装飾を描画：
+
+- **rei_blue**：4つの半透明水彩ブロブ（`filter:blur`）
+- **jun_red**：ハーフトーン dot pattern（`radial-gradient`）+ コーナーバースト（`repeating-conic-gradient`）
+- **parent_dark**：なし
+
+---
+
+## 5. 認証フロー
+
+### 5.1 子供ログイン（パスキー + PIN）
+
+```
+/login → ユーザー選択タイル（れい/じゅん）
+       → signInWithPasskey()（生体認証）
+       → PinGate が PIN 入力を要求（pin_hash が設定されている場合）
+       → /home
+```
+
+### 5.2 親ログイン
+
+```
+/parent-login → email + password
+             → signInWithPassword()
+             → /dashboard
+```
+
+### 5.3 ユーザー切替（同一端末）
+
+ログイン中に `UserSwitchModal` から別ユーザーを選択 → 対象が子供なら `verify_pin_for()` で PIN 検証 → `signInWithPasskey()` で切替。
+
+### 5.4 子アカウント初回セットアップ（親が行う）
+
+1. `/setup` で子の display_name / theme_key を入力
+2. `POST /api/admin/create-child` が service role で `auth.admin.createUser()` + profiles / accounts（×3）/ family_settings を作成
+3. 同 `/setup` 画面で `registerPasskey()` を実行（子の端末で生体認証を登録）
+4. 任意で PIN を設定（`set_pin()` RPC）
+
+---
+
+## 6. Dual-mode（実DB / モック）パターン
+
+すべての子供向けページは「実ログイン済みなら実 DB、未ログインならモック Context」という dual-mode で実装されている。フック側で `null` を返すと各ページがモックにフォールバックする。
 
 ```ts
-// ★サーバ専用。SUPABASE_SERVICE_ROLE_KEY は絶対にクライアントへ出さない
-import { createClient } from '@supabase/supabase-js';
-
-export function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
-}
+// 典型パターン
+const { accounts, loading } = useAccounts();   // 未ログイン → null
+const mockBalances = useMockBalances().balances[themeKey];
+const balances = accounts ?? mockBalances;      // null のときモック使用
 ```
 
-**必要な環境変数**
+これにより **Supabase 接続なしで全画面のモックデモが動く**。
+
+---
+
+## 7. 環境変数
 
 | 変数 | 用途 | 公開可否 |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | 共通 | 公開可 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ブラウザ/SSR | 公開可 |
-| `SUPABASE_SERVICE_ROLE_KEY` | cron バッチ | **サーバ専用・厳秘** |
-| `CRON_SECRET` | cron 認証 | **サーバ専用・厳秘**（16文字以上のランダム） |
+| `SUPABASE_SERVICE_ROLE_KEY` | cron + 子アカウント作成 | **サーバ専用・厳秘** |
+| `CRON_SECRET` | cron Route Handler の認証 | **サーバ専用・厳秘** |
 
 ---
 
-## 3. Next.js `src/` ディレクトリ構成
+## 8. 絶対に守る制約
 
-```
-src/
-├── app/
-│   ├── (auth)/                       # 未ログイン領域
-│   │   ├── layout.tsx
-│   │   ├── login/page.tsx            # ユーザー選択（れい/じゅん/おや）→ パスキー
-│   │   └── parent-login/page.tsx     # 親：email + password（ダークUI）
-│   │
-│   ├── (child)/                      # 子供用（パスキー認証必須）
-│   │   ├── layout.tsx                # ThemeProvider + ヘッダー(名前/アバター) + ボトムナビ
-│   │   ├── home/page.tsx             # つかう/ためる/ふやす 残高カード
-│   │   ├── transfer/page.tsx         # 箱から箱への振替
-│   │   ├── grow/page.tsx             # 投資状況：ロット別カウントダウン/プログレスバー
-│   │   ├── jobs/page.tsx             # お仕事一覧＋申請
-│   │   └── rules/page.tsx            # ルール確認（ひらがな中心）
-│   │
-│   ├── (parent)/                     # 親用（ダーク管理UI）
-│   │   ├── layout.tsx
-│   │   ├── dashboard/page.tsx        # 兄弟別サマリ
-│   │   ├── approvals/page.tsx        # お仕事承認（兄弟別）
-│   │   ├── settings/page.tsx         # 基本給/単価/金利/満期日数/約束
-│   │   ├── avatars/page.tsx          # アイコン画像アップロード（Storage）
-│   │   └── setup/page.tsx            # 子のパスキー登録ブートストラップ(§5)
-│   │
-│   ├── api/
-│   │   └── cron/daily/route.ts       # Vercel Cron 日次バッチ
-│   │
-│   ├── layout.tsx                    # ルートレイアウト
-│   └── globals.css                   # テーマCSS変数（data-theme 切替）
-│
-├── components/
-│   ├── ui/                           # Button, Card, Sheet など汎用
-│   ├── child/                        # BalanceCard, BottomNav, GrowCountdown, TransferDial
-│   └── parent/                       # ApprovalRow, SettingForm, AvatarUploader
-│
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts                 # ブラウザ用（passkey opt-in）
-│   │   ├── server.ts                 # Server Component / Route Handler 用
-│   │   └── admin.ts                  # service role（サーバ専用）
-│   ├── auth/passkey.ts               # signInWithPasskey / registerPasskey ラッパ
-│   ├── money/rpc.ts                  # transfer_money / approve_job_request 呼び出し
-│   └── theme/
-│       ├── themes.ts                 # rei_blue / jun_red / parent_dark のトークン定義
-│       └── ThemeProvider.tsx         # profile.theme_key → data-theme を付与
-│
-├── types/db.ts                       # supabase gen types で生成
-├── hooks/useProfile.ts               # ログイン中プロフィール取得
-└── middleware.ts                     # セッション更新＋ロール別ルート保護
-```
-
-**テーマ切替の方針（概略）**：Tailwind は色をハードコードせず CSS 変数（`--color-primary` 等）で定義し、ルート要素の `data-theme="rei_blue | jun_red | parent_dark"` に応じて `globals.css` で変数値を切り替える。ログイン中プロフィールの `theme_key` を `ThemeProvider` が読んで付与するだけで、れいは「丸み・ハワイアンブルー」、じゅんは「シャープ・レッド」、親は「ダークグレー」に一括で変わる。ビルドを分ける必要がなく動的切替できる。
-
-**ブラウザクライアント（パスキー opt-in）**
-
-```ts
-// src/lib/supabase/client.ts
-import { createBrowserClient } from '@supabase/ssr';
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { experimental: { passkey: true } } }   // ← beta opt-in（要 v2.105.0+）
-  );
-}
-```
+1. **お金が動く操作**（残高変更・振替・お仕事承認・満期処理・基本給）は **SECURITY DEFINER の RPC 経由のみ**。`accounts` / `transactions` / `investment_lots` へのクライアント直接書込ポリシーを追加しない。
+2. **RLS は全テーブルで有効**。判定ヘルパーは `is_parent()` / `my_family_id()`（再帰回避）を使う。
+3. **`SUPABASE_SERVICE_ROLE_KEY` と `CRON_SECRET` はサーバ専用**。`NEXT_PUBLIC_*`・クライアントバンドル・ログ・git に絶対出さない。
+4. **パスキーは beta 機能**。実装変更時は公式 docs でフラグ名・API 形を再確認（記憶で書かない）。
+5. **Cron は 1日1回まで**（Hobby 制約）。1本の cron に全バッチを相乗りさせる。
+6. **「ふやす」は満期までロック**（早期引き出し不可）が初期仕様。変更は要相談。
 
 ---
 
-## 4. 実装前に決めておきたい判断ポイント
+## 9. 今後の拡張候補（v1.1 以降）
 
-1. **「ふやす」の早期引き出し**：満期までロック（推奨・投資教育の趣旨に合致、カウントダウンUIとも整合）か、利息を放棄して引き出し可にするか。要件の「3つの箱を自由に移動」と投資ロックは部分的に衝突するため、**つかう⇄ためるは自由・つかう→ふやすは一方向ロック**を初期案にしています。
-
-2. **子のパスキー登録フロー**（§5）：登録にはログイン済みセッションが必要。初回の具体的な動線を確定したい。
-
-3. **基本給の支給**：日次cronで曜日判定して自動支給（提案の方式）か、親が手動でボタン支給か。
-
-4. **アバター画像**：公開バケット（実装が楽）か、非公開＋署名URL（プライバシー重視・提案の方式）か。
-
-5. **同一端末での3アカウント運用**：家族で1台のiPhoneを共有する場合、れい・じゅん・親の3つのパスキーを同じ端末に登録すれば、ログイン時に discoverable credential の選択画面で本人を選べます。これで「文字入力なしで本人を切替」が成立する想定でOKか。
-
----
-
-## 5. 補足：子供のパスキー登録ブートストラップ案
-
-パスキー登録は「ログイン済み」が前提のため、初回だけ親が橋渡しします。
-
-1. 親が管理画面から子アカウントを作成（service role の Admin API。パスワードなしユーザー）。
-2. 親が子の端末で一時的にその子としてサインイン（マジックリンク等の一時手段）。
-3. その場で `registerPasskey()` を実行し、端末に生体認証パスキーを登録。
-4. 以後、子は `signInWithPasskey()` のみ＝**Touch ID / Face ID だけでログイン**（文字入力ゼロ）。
-
----
-
-### 次のステップ
-
-この3点の方向性でよければ、次はご希望の部分から実コードに入れます。優先度の高そうな候補：
-- テーマ切替（CSS変数＋ThemeProvider）と子供ホーム画面（残高カード＋ボトムナビ）
-- 投資状況画面（ロット別カウントダウン／プログレスバー）
-- 親の承認画面＋設定画面
-- 初回セットアップ（家族・口座3行・パスキー登録）一式
-```
+- **push 通知**：お仕事承認・満期到達を子供にプッシュ
+- **貯金グラフの実データ化**：`transactions` の週次集計をダッシュボードに表示
+- **目標達成時の自動処理**：save 残高 ≥ target 時に自動で「たっせい」記録を transaction に残す
+- **複数家族対応**：現状 1 家族前提。family_id RLS がそのまま使えるため追加コストは小さい
+- **「ふやす」早期引き出し**：利息放棄で引き出し可にするオプション（`transfer_money` の grow ロックを解除するだけ）
