@@ -15,6 +15,7 @@ export function BottomNav({ theme }: { theme: ChildTheme }) {
         left: 0,
         right: 0,
         bottom: 0,
+        zIndex: 20,
         background: theme.cardBg,
         borderTop: theme.cardBorder !== "none" ? theme.cardBorder : "1px solid rgba(0,0,0,.08)",
         boxShadow: theme.cardBorder === "none" ? "0 -8px 22px rgba(27,58,107,.12)" : "none",
