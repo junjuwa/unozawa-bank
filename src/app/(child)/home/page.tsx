@@ -88,14 +88,16 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="flex-1">
-          <BalanceCard
-            theme={theme}
-            themeKey={themeKey}
-            kind="grow"
-            label="ふやす"
-            icon={<BoxIcon kind="grow" />}
-            amount={balances.grow}
-          />
+          <Link href="/grow" style={{ display: "block", textDecoration: "none" }}>
+            <BalanceCard
+              theme={theme}
+              themeKey={themeKey}
+              kind="grow"
+              label="ふやす"
+              icon={<BoxIcon kind="grow" />}
+              amount={balances.grow}
+            />
+          </Link>
         </div>
       </div>
     </div>
