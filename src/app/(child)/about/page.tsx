@@ -54,6 +54,7 @@ export default function AboutPage() {
           height: "100%",
         }}
       >
+        {/* isSide=false(モバイル)のときBottomNavの高さ分(7rem)をCarousel下部に確保 */}
         <OnboardingCarousel
           theme={theme}
           isJun={isJun}

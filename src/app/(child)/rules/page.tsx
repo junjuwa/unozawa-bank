@@ -38,7 +38,7 @@ export default function RulesPage() {
     : undefined;
 
   return (
-    <div style={{ fontFamily: theme.fontFamily, color: theme.ink }}>
+    <div className="pt-2" style={{ fontFamily: theme.fontFamily, color: theme.ink }}>
 
       {/* ヘッダー */}
       <header style={{ textAlign: "center", padding: "1.25rem 0.5rem 0.75rem" }}>

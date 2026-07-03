@@ -120,7 +120,7 @@ export function PromiseCard({ theme, isJun, item, index }: Props) {
           font: `${theme.headingWeight} 1.28rem ${theme.fontFamily}`,
           color: theme.ink,
           lineHeight: 1.7,
-          textShadow: theme.titleShadow !== "none" ? theme.titleShadow : undefined,
+          // カード内タイトルは白地なので影なし（titleShadowはヘッダー用）
         }}
         dangerouslySetInnerHTML={{ __html: item.title }}
       />
