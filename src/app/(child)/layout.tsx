@@ -92,7 +92,6 @@ export default function ChildLayout({
         fontFamily: theme.fontFamily,
         display: isSide ? "flex" : "block",
         position: "relative",
-        overflow: "hidden",
       }}
     >
       <FrameDecoration themeKey={themeKey} />
