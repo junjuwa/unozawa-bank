@@ -106,8 +106,8 @@ export default function ChildLayout({
           onSwitchUser={canSwitch ? () => setShowSwitch(true) : undefined}
         />
         <main
-          className={isSide ? "px-4" : "pb-28 px-4"}
-          style={{ maxWidth: 720, margin: "0 auto" }}
+          className="px-4"
+          style={{ maxWidth: 720, margin: "0 auto", paddingBottom: isSide ? undefined : "7rem" }}
         >
           {children}
         </main>
