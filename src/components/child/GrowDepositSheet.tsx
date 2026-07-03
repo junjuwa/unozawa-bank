@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChildTheme } from "@/lib/theme/childTheme";
 import { ThemeKey } from "@/lib/theme/themes";
 import { transferMoney } from "@/lib/money/rpc";
@@ -92,7 +93,7 @@ export function GrowDepositSheet({
   const borderStyle = isJun ? "3px solid #111" : "none";
   const shadowStyle = isJun ? "4px 4px 0 #111" : "0 4px 14px rgba(27,158,90,.35)";
 
-  return (
+  return createPortal(
     <>
       {/* バックドロップ */}
       <div
@@ -263,6 +264,7 @@ export function GrowDepositSheet({
           }}
         />
       )}
-    </>
+    </>,
+    document.body,
   );
 }
