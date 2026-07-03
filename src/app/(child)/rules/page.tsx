@@ -66,7 +66,7 @@ export default function RulesPage() {
             textShadow: titleShadow,
           }}
         >
-          <span style={{ color: nameColor }}>{displayName}</span>と おうちのひとの やくそく
+          <span style={{ color: nameColor }}>{displayName}</span>と パパ・ママの やくそく
         </h1>
       </header>
 

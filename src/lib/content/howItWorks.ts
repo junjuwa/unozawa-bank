@@ -10,7 +10,7 @@ export const HOW_IT_WORKS: HowItWorksItem[] = [
   { id: "move",   icon: "🔁", text: "「つかう」から すきなはこへ 自分で うつせる" },
   { id: "grow",   icon: "📈", text: "「ふやす」に 入れると {maturityDays}日で +{rate}% ふえて「ためる」に もどる" },
   { id: "lock",   icon: "🔒", text: "「ふやす」の お金は {maturityDays}日 は 取り出せない" },
-  { id: "job",    icon: "✅", text: "お仕事は もうしこむ → おうちのひとが OK → お金が もらえる" },
+  { id: "job",    icon: "✅", text: "お仕事は もうしこむ → パパ・ママが OK → お金が もらえる" },
   { id: "salary", icon: "🗓️", text: "きほんきゅうは 家族の一員だから、お仕事は がんばったぶんの ごほうび" },
   { id: "goal",   icon: "⭐", text: "「ためる」で ほしいもの目標を きめられる" },
 ];

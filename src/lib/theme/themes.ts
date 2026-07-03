@@ -7,5 +7,5 @@ export const THEME_KEYS: ThemeKey[] = ["rei_blue", "jun_red", "parent_dark"];
 export const THEME_LABELS: Record<ThemeKey, string> = {
   rei_blue: "れい（ハワイアンブルー）",
   jun_red: "じゅん（レッド）",
-  parent_dark: "おとうさん（ダーク）",
+  parent_dark: "パパ・ママ",
 };

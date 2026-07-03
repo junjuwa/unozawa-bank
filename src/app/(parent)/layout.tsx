@@ -19,7 +19,7 @@ export default function ParentLayout({
   const { members } = useFamilyMembers();
   const router = useRouter();
   const displayName =
-    typeof profile?.display_name === "string" ? profile.display_name : "おとうさん";
+    typeof profile?.display_name === "string" ? profile.display_name : "パパ・ママ";
   const userId = (profile as { id?: string } | null)?.id ?? null;
   const hasPinHash = !!(profile as { pin_hash?: string | null } | null)?.pin_hash;
   const [showSwitch, setShowSwitch] = useState(false);
@@ -32,7 +32,7 @@ export default function ParentLayout({
 
   const switchUsers: SwitchUser[] = (members ?? []).map((m) => ({
     profileId: m.id,
-    label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
+    label: m.display_name ?? (m.role === "parent" ? "パパ・ママ" : m.theme_key ?? ""),
     avatarUrl: m.avatar_url,
     destinationPath: m.role === "parent" ? "/dashboard" : "/home",
     hasPin: m.has_pin,

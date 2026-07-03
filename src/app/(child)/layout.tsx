@@ -67,7 +67,7 @@ export default function ChildLayout({
   // 切り替え候補リスト（全メンバー。PINなしも表示し、モーダル側でエラー案内）
   const switchUsers: SwitchUser[] = (members ?? []).map((m) => ({
     profileId: m.id,
-    label: m.display_name ?? (m.role === "parent" ? "おとうさん" : m.theme_key ?? ""),
+    label: m.display_name ?? (m.role === "parent" ? "パパ・ママ" : m.theme_key ?? ""),
     avatarUrl: m.avatar_url,
     destinationPath: m.role === "parent" ? "/dashboard" : "/home",
     hasPin: m.has_pin,

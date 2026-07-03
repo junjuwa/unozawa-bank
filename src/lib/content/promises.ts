@@ -50,7 +50,7 @@ export const PROMISES: PromiseItem[] = [
     iconSvg:
       '<circle cx="12" cy="12" r="9"/><polygon points="15.5,8.5 10.5,10.5 8.5,15.5 13.5,13.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="#fff" stroke="none"/>',
     title: '<ruby>自分<rt>じぶん</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>の つかいかたは<br><ruby>自分<rt>じぶん</rt></ruby>で きめる',
-    note: 'こまったら おうちのひとに <ruby>相談<rt>そうだん</rt></ruby>してね',
+    note: 'こまったら パパ・ママに <ruby>相談<rt>そうだん</rt></ruby>してね',
     noteSvgPath: '<path d="M4 5h16v11H9l-4 3z"/>',
   },
 ];
