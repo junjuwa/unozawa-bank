@@ -127,7 +127,7 @@ const ArtStart = () => (
 interface SlideData {
   art: (isJun: boolean, maturityDays: number, rate: number) => React.ReactNode;
   mascotLine: string;
-  title: string;
+  title: React.ReactNode;
   body?: (maturityDays: number, rate: number) => React.ReactNode;
   isLast?: boolean;
 }
@@ -136,31 +136,31 @@ const SLIDES: SlideData[] = [
   {
     art: () => <ArtWelcome />,
     mascotLine: "自分の お金を 自分で かんがえて つかう れんしゅうだよ。",
-    title: "ようこそ！じぶんの お金を つかってみよう",
+    title: <>ようこそ！<br />じぶんの お金を つかってみよう</>,
   },
   {
     art: (isJun) => <ArtBoxes isJun={isJun} />,
     mascotLine: "お金は はこで わけると わかりやすい！",
     title: "お金は 3つの はこで わける",
     body: () => (
-      <>「つかう」は すぐ つかう お金。「ためる」は ほしいものの ための お金。「ふやす」は あずけて ふやす お金。</>
+      <>「つかう」は すぐ つかう お金。<br />「ためる」は ほしいものの ための お金。<br />「ふやす」は あずけて ふやす お金。</>
     ),
   },
   {
     art: (isJun) => <ArtTransfer isJun={isJun} />,
     mascotLine: "もらった お金は まず ここに くるよ。",
-    title: "もらった お金は まず「つかう」に 入る",
-    body: () => <>そこから「ためる」や「ふやす」へ、自分で すきなだけ うつせるよ。</>,
+    title: <>もらった お金は<br />まず「つかう」に 入る</>,
+    body: () => <>そこから「ためる」や「ふやす」へ、<br />自分で すきなだけ うつせるよ。</>,
   },
   {
     art: (isJun) => <ArtGrow isJun={isJun} />,
     mascotLine: "まつと ふえる！ でも とちゅうで 出せないよ。",
-    title: "「ふやす」に 入れると お金が ふえる",
+    title: <>「ふやす」に 入れると<br />お金が ふえる</>,
     body: (maturityDays, rate) => {
       const rateDisplay = Math.round(rate * 100);
       const example = Math.round(100 * (1 + rate));
       return (
-        <><b>{maturityDays}</b>日 まつと <b>＋{rateDisplay}%</b> ふえて「ためる」に もどるよ。（例：100円 → <b>{example}円</b>！）そのあいだは 取り出せないから、まつのが だいじ。</>
+        <><b>{maturityDays}</b>日 まつと <b>＋{rateDisplay}%</b> ふえて<br />「ためる」に もどるよ。<br />（例：100円 → <b>{example}円</b>！）<br />そのあいだは 取り出せないから、<br />まつのが だいじ。</>
       );
     },
   },
@@ -168,13 +168,13 @@ const SLIDES: SlideData[] = [
     art: () => <ArtJob />,
     mascotLine: "がんばった ごほうびに お金が もらえる！",
     title: "お手つだいで お金を かせぐ",
-    body: () => <>お仕事を もうしこんで、おうちのひとが OK したら お金が もらえる。きほんきゅうは 家族だから、お仕事は がんばった ごほうびだよ。</>,
+    body: () => <>お仕事を もうしこんで、<br />おうちのひとが OK したら お金が もらえる。<br />きほんきゅうは 家族だから、<br />お仕事は がんばった ごほうびだよ。</>,
   },
   {
     art: () => <ArtGoal />,
     mascotLine: "あと いくらで とどくか わかるよ！",
     title: "ほしいものを もくひょうに できる",
-    body: () => <>「ためる」で ほしいものと きんがくを 決めると、あと いくらで とどくか わかるよ。</>,
+    body: () => <>「ためる」で ほしいものと きんがくを 決めると、<br />あと いくらで とどくか わかるよ。</>,
   },
   {
     art: () => <ArtStart />,
