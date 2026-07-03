@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="design_doc_mode" content="canvas">
+<title>UNOZAWA BANK — オンボーディング（このアプリについて）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=RocknRoll+One&display=swap" rel="stylesheet">
+<style>
+/* =========================================================================
+   UNOZAWA BANK — オンボーディング（しくみの説明・スワイプ式カルーセル）
+   ・構造/クラスは両テーマ完全共通。skin（配色・質感）だけ [data-theme] で差替。
+   ・テーマ値は先頭の CSSカスタムプロパティ（既存 ChildTheme のトークン名）で定義。
+   ・各スライドは <section class="slide"> で独立（React の OnboardingSlide に1:1分解可能）。
+   ========================================================================= */
+[data-theme="rei_blue"]{
+  --font-family:'Zen Maru Gothic', system-ui, sans-serif;
+  --frame-bg:linear-gradient(180deg,#CDEEFF 0%,#BFE9FF 34%,#A6DEF7 72%,#8FD3F4 100%);
+  --ink:#1B3A6B; --sub:#2c6f96;
+  --accent:#FF7E6B; --accent-ink:#FF6B55;
+  --card-bg:#ffffff; --card-radius:28px;
+  --card-shadow:0 14px 30px rgba(27,58,107,.16);
+  --card-border:none;
+  --progress-track:#DCEFFB; --progress-fill:linear-gradient(90deg,#FFB199,#FF7E6B);
+  --nav-active:#FF7E6B;
+  --heading-weight:900; --title-shadow:none; --dot-idle:#BFE0F2;
+}
+[data-theme="jun_red"]{
+  --font-family:'RocknRoll One', system-ui, sans-serif;
+  --frame-bg:#1B6CD9;
+  --ink:#102A54; --sub:#1B6CD9;
+  --accent:#E2231A; --accent-ink:#E2231A;
+  --card-bg:#ffffff; --card-radius:12px;
+  --card-shadow:6px 6px 0 #111;
+  --card-border:3px solid #111;
+  --progress-track:#0f4aa0; --progress-fill:repeating-linear-gradient(45deg,#E2231A,#E2231A 7px,#b81c14 7px,#b81c14 14px);
+  --nav-active:#E2231A;
+  --heading-weight:400; --title-shadow:2px 2px 0 #111; --dot-idle:rgba(255,255,255,.4);
+}
+*{box-sizing:border-box;}
+
+/* ---- フレーム ---- */
+.onb-screen{position:relative;width:390px;height:844px;overflow:hidden;border-radius:38px;
+  font-family:var(--font-family);color:var(--ink);background:var(--frame-bg);
+  box-shadow:0 24px 60px rgba(27,58,107,.26);display:flex;flex-direction:column;}
+.onb-screen--flat{border-radius:0;box-shadow:none;width:100%;height:100%;}
+.onb-decor{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+[data-theme="rei_blue"] .onb-decor::before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.5);filter:blur(30px);top:-50px;right:-40px;}
+[data-theme="rei_blue"] .onb-decor::after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;background:rgba(255,126,107,.16);filter:blur(30px);bottom:150px;left:-60px;}
+[data-theme="jun_red"] .onb-decor{background-image:radial-gradient(rgba(255,255,255,.16) 1.6px, transparent 1.7px);background-size:13px 13px;}
+[data-theme="jun_red"] .onb-decor::before{content:"";position:absolute;top:-90px;right:-90px;width:300px;height:300px;border-radius:50%;background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.14) 0deg 3deg, transparent 3deg 9deg);-webkit-mask:radial-gradient(circle,#000 28%,transparent 60%);mask:radial-gradient(circle,#000 28%,transparent 60%);}
+
+/* ---- ステータス＋進捗ドット ---- */
+.onb-top{position:relative;z-index:2;}
+.onb-status{display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.4rem .25rem;font:700 .8rem var(--font-family);color:var(--ink);}
+[data-theme="jun_red"] .onb-status{color:#fff;text-shadow:1px 1px 0 #111;}
+.onb-status .r{letter-spacing:2px;}
+.onb-dots{display:flex;gap:.4rem;justify-content:center;padding:.6rem 0 .2rem;}
+.onb-dots span{width:8px;height:8px;border-radius:5px;background:var(--dot-idle);transition:.2s;}
+.onb-dots span.is-active{width:22px;background:var(--nav-active);}
+
+/* ---- カルーセル本体（CSS scroll-snap。JS不要で横スクロール可） ---- */
+.onb-track{position:relative;z-index:1;flex:1;display:flex;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;scrollbar-width:none;}
+.onb-track::-webkit-scrollbar{display:none;}
+.slide{min-width:100%;max-width:100%;overflow-x:hidden;scroll-snap-align:center;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:.5rem 1.5rem 1rem;overflow-y:auto;}
+
+/* イラスト枠 */
+.slide__art{width:100%;max-width:100%;height:200px;border-radius:26px;margin-bottom:1rem;flex-shrink:0;
+  position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:var(--card-bg);border:var(--card-border);box-shadow:var(--card-shadow);}
+.slide__art-emoji{font-size:74px;line-height:1;}
+
+/* マスコットひとこと */
+.slide__mascot{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;width:100%;}
+.slide__mascot-badge{width:46px;height:46px;flex-shrink:0;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;border:3px solid #fff;box-shadow:0 5px 12px rgba(27,58,107,.18);}
+[data-theme="jun_red"] .slide__mascot-badge{border:3px solid #111;box-shadow:3px 3px 0 #111;border-radius:12px;}
+.slide__mascot-line{flex:1;text-align:left;background:var(--card-bg);border:var(--card-border);border-radius:16px 16px 16px 5px;padding:.6rem .8rem;font:700 .78rem var(--font-family);color:var(--ink);line-height:1.85;box-shadow:var(--card-shadow);}
+[data-theme="jun_red"] .slide__mascot-line{font-weight:400;box-shadow:3px 3px 0 #111;}
+
+.slide__title{margin:.2rem 0 .6rem;font:var(--heading-weight) 1.42rem var(--font-family);color:var(--ink);line-height:1.7;text-shadow:var(--title-shadow);}
+[data-theme="jun_red"] .slide__title{color:#fff;text-shadow:2px 2px 0 #111,-2px 2px 0 #111,2px -2px 0 #111,-2px -2px 0 #111;}
+.slide__body{margin:0;font:700 .86rem var(--font-family);color:var(--ink);line-height:1.95;background:rgba(255,255,255,.55);border-radius:14px;padding:.7rem .9rem;}
+[data-theme="jun_red"] .slide__body{font-weight:400;color:#102A54;background:#fff;border:2px solid #111;}
+.slide ruby rt{font-size:.5em;font-weight:500;letter-spacing:.02em;}
+.slide__body b{color:var(--accent-ink);}
+
+/* イラスト内の部品：はこ / コイン / バー */
+.art-boxes{display:flex;gap:.6rem;}
+.art-box{width:60px;height:74px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;color:#fff;font:900 .66rem var(--font-family);box-shadow:0 6px 12px rgba(27,58,107,.16);}
+[data-theme="jun_red"] .art-box{border:2.5px solid #111;box-shadow:2px 2px 0 #111;border-radius:10px;font-weight:400;}
+.art-box--use{background:linear-gradient(160deg,#7FC4EC,#3F9FDC);}
+.art-box--save{background:linear-gradient(160deg,#FF9E8C,#FF7E6B);}
+.art-box--grow{background:linear-gradient(160deg,#FFD86F,#F0B429);color:#7a4e00;}
+[data-theme="jun_red"] .art-box--use{background:#1B6CD9;}
+[data-theme="jun_red"] .art-box--save{background:#E2231A;}
+[data-theme="jun_red"] .art-box--grow{background:#FFD23F;color:#111;}
+.coin{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Zen Maru Gothic';font-weight:900;background:radial-gradient(circle at 35% 30%,#FFE89A,#FFD23F);border:2px solid #fff;color:#C98A12;box-shadow:0 3px 5px rgba(27,58,107,.16);}
+[data-theme="jun_red"] .coin{background:#FFD23F;border:2.5px solid #111;color:#111;box-shadow:2px 2px 0 #111;}
+.art-arrow{color:var(--accent);display:inline-flex;}
+[data-theme="jun_red"] .art-arrow{color:#FFD23F;filter:drop-shadow(1px 1px 0 #111);}
+.art-bar{width:150px;height:16px;border-radius:9px;background:var(--progress-track);overflow:hidden;box-shadow:inset 0 1px 3px rgba(27,58,107,.12);}
+[data-theme="jun_red"] .art-bar{border:2.5px solid #111;border-radius:3px;box-shadow:none;}
+.art-bar>i{display:block;height:100%;border-radius:9px;background:var(--progress-fill);}
+[data-theme="jun_red"] .art-bar>i{border-radius:0;}
+
+/* ---- 下部ナビ ---- */
+.onb-nav{position:relative;z-index:2;display:flex;align-items:center;gap:.75rem;padding:1rem 1.4rem 1.4rem;}
+.onb-skip{background:none;border:0;font:700 .84rem var(--font-family);color:var(--sub);cursor:pointer;padding:.6rem;}
+[data-theme="jun_red"] .onb-skip{font-weight:400;color:#EAF2FF;}
+.onb-next{width:100%;height:56px;border:0;border-radius:16px;background:var(--accent);color:#fff;font:var(--heading-weight) 1rem var(--font-family);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;cursor:pointer;box-shadow:0 10px 22px rgba(255,126,107,.45);}
+[data-theme="jun_red"] .onb-next{border:3px solid #111;border-radius:12px;box-shadow:4px 4px 0 #111;text-shadow:1.5px 1.5px 0 #111;}
+.onb-cta-rules{width:100%;height:56px;border:0;border-radius:16px;background:var(--card-bg);color:var(--ink);border:var(--card-border);font:var(--heading-weight) .92rem var(--font-family);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;cursor:pointer;box-shadow:var(--card-shadow);}
+
+/* ---- キャンバス台紙（プレビュー用・実装不要） ---- */
+body{margin:0;font-family:'Zen Maru Gothic',system-ui,sans-serif;background:#EAEDF2;background-image:radial-gradient(circle,rgba(0,0,0,.05) 1px,transparent 1.5px);background-size:22px 22px;}
+.stage{display:flex;gap:60px;align-items:flex-start;padding:48px 72px 90px;width:max-content;min-width:100%;}
+.stage__col{display:flex;flex-direction:column;gap:12px;}
+.stage__cap{font:600 13px system-ui;color:#37526e;display:flex;align-items:center;gap:8px;}
+.stage__cap .d{width:11px;height:11px;border-radius:50%;}
+.stage__h{font:800 20px 'Zen Maru Gothic';color:#20293a;margin:0;}
+.stage__note{font:400 12px system-ui;color:#6b7480;max-width:860px;line-height:1.7;margin:2px 0 0;}
+.stage__hint{font:600 11px system-ui;color:#8a93a0;}
+</style>
+</head>
+<body>
+<div class="stage" style="padding-bottom:0;">
+  <div class="stage__col" style="width:100%;">
+    <h1 class="stage__h">UNOZAWA BANK — オンボーディング（このアプリについて）</h1>
+    <p class="stage__note">アプリの“しくみ”を伝えるフルスクリーンのスワイプ式カルーセル（価値観の「やくそく」は別画面）。構造は両テーマ共通、skin だけ <code>[data-theme]</code> で切替。<span class="stage__hint">フレーム内を横スクロール（またはトラックをドラッグ）で7スライドを確認できます。</span></p>
+  </div>
+</div>
+<div class="stage">
+  <div class="stage__col">
+    <div class="stage__cap"><span class="d" style="background:#FF7E6B;"></span>れい — rei_blue（水彩）</div>
+    <div class="onb-screen" data-theme="rei_blue">
+      <div class="onb-decor"></div>
+      <div class="onb-top">
+        <div class="onb-status"><span>9:41</span><span class="r">▮▮▮ 100%</span></div>
+        <div class="onb-dots"><span class="is-active"></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="onb-track">
+
+        <section class="slide" data-slide="0">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="58" r="34" fill="#FFD86F" stroke="#F5B62E" stroke-width="4"/><circle cx="60" cy="58" r="24" fill="none" stroke="#F5B62E" stroke-width="2" opacity=".5"/><text x="60" y="70" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="34" fill="#C98A12">¥</text><path d="M22 30l3 6 6 3-6 3-3 6-3-6-6-3 6-3z" fill="#FF7E6B"/><path d="M96 78l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" fill="#7FC4EC"/><circle cx="98" cy="34" r="4" fill="#FFB199"/></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line"><ruby>自分<rt>じぶん</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>を <ruby>自分<rt>じぶん</rt></ruby>で かんがえて つかう れんしゅうだよ。</p></div>
+          <h2 class="slide__title">ようこそ！じぶんの お<ruby>金<rt>かね</rt></ruby>を つかってみよう</h2>
+        </section>
+
+        <section class="slide" data-slide="1">
+          <div class="slide__art"><div class="art-boxes"><div class="art-box art-box--use">つかう</div><div class="art-box art-box--save">ためる</div><div class="art-box art-box--grow">ふやす</div></div></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">お<ruby>金<rt>かね</rt></ruby>は はこで わけると わかりやすい！</p></div>
+          <h2 class="slide__title">お<ruby>金<rt>かね</rt></ruby>は 3つの はこで わける</h2>
+          <p class="slide__body">「つかう」は すぐ つかう お<ruby>金<rt>かね</rt></ruby>。「ためる」は ほしいものの ための お金。「ふやす」は あずけて ふやす お金。</p>
+        </section>
+
+        <section class="slide" data-slide="2">
+          <div class="slide__art"><div style="display:flex;align-items:center;gap:.5rem;"><div class="art-box art-box--use">つかう</div><span class="art-arrow"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><polygon points="4,10 14,10 14,6 21,12 14,18 14,14 4,14"/></svg></span><div style="display:flex;flex-direction:column;gap:.4rem;"><div class="art-box art-box--save" style="width:52px;height:34px;">ためる</div><div class="art-box art-box--grow" style="width:52px;height:34px;">ふやす</div></div></div></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">もらった お<ruby>金<rt>かね</rt></ruby>は まず ここに くるよ。</p></div>
+          <h2 class="slide__title">もらった お<ruby>金<rt>かね</rt></ruby>は まず「つかう」に <ruby>入<rt>はい</rt></ruby>る</h2>
+          <p class="slide__body">そこから「ためる」や「ふやす」へ、<ruby>自分<rt>じぶん</rt></ruby>で すきなだけ うつせるよ。</p>
+        </section>
+
+        <section class="slide" data-slide="3">
+          <div class="slide__art"><div style="display:flex;flex-direction:column;align-items:center;gap:.7rem;"><div style="display:flex;align-items:center;gap:.4rem;"><span class="coin" style="width:34px;height:34px;font-size:14px;">¥</span><span class="art-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="#3DB66E"><polygon points="12,4 20,14 4,14"/></svg></span><span class="coin" style="width:40px;height:40px;font-size:16px;">¥</span></div><div class="art-bar"><i style="width:66%;"></i></div></div></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">まつと ふえる！ でも とちゅうで 出せないよ。</p></div>
+          <h2 class="slide__title">「ふやす」に <ruby>入<rt>い</rt></ruby>れると お<ruby>金<rt>かね</rt></ruby>が ふえる</h2>
+          <p class="slide__body"><b>◯</b><ruby>日<rt>にち</rt></ruby> まつと <b>＋◯％</b> ふえて「ためる」に もどるよ。（<ruby>例<rt>れい</rt></ruby>：100<ruby>円<rt>えん</rt></ruby> → <b>102円</b>！）そのあいだは <ruby>取<rt>と</rt></ruby>り<ruby>出<rt>だ</rt></ruby>せないから、まつのが だいじ。</p>
+        </section>
+
+        <section class="slide" data-slide="4">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="30" y="26" width="52" height="64" rx="9" fill="#fff" stroke="#2C7BB0" stroke-width="4"/><path d="M46 26v-6h20v6" stroke="#2C7BB0" stroke-width="4"/><path d="M42 52l10 10 22-24" stroke="#3DB66E" stroke-width="6"/><circle cx="86" cy="82" r="18" fill="#FFD86F" stroke="#F5B62E" stroke-width="3"/><text x="86" y="89" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="18" fill="#C98A12">¥</text></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">がんばった ごほうびに お<ruby>金<rt>かね</rt></ruby>が もらえる！</p></div>
+          <h2 class="slide__title">お<ruby>手<rt>て</rt></ruby>つだいで お<ruby>金<rt>かね</rt></ruby>を かせぐ</h2>
+          <p class="slide__body">お<ruby>仕事<rt>しごと</rt></ruby>を もうしこんで、おうちのひとが OK したら お<ruby>金<rt>かね</rt></ruby>が もらえる。きほんきゅうは <ruby>家族<rt>かぞく</rt></ruby>だから、お仕事は がんばった ごほうびだよ。</p>
+        </section>
+
+        <section class="slide" data-slide="5">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none"><circle cx="56" cy="60" r="42" fill="#FF9E8C"/><circle cx="56" cy="60" r="42" fill="none" stroke="#FF7E6B" stroke-width="3"/><circle cx="56" cy="60" r="28" fill="#fff"/><circle cx="56" cy="60" r="15" fill="#FF7E6B"/><circle cx="56" cy="60" r="5" fill="#fff"/><path d="M84 30v34" stroke="#1B3A6B" stroke-width="4" stroke-linecap="round"/><path d="M84 32h16l-4 6 4 6H84z" fill="#FFD23F" stroke="#1B3A6B" stroke-width="2"/></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">あと いくらで とどくか わかるよ！</p></div>
+          <h2 class="slide__title">ほしいものを もくひょうに できる</h2>
+          <p class="slide__body">「ためる」で ほしいものと きんがくを <ruby>決<rt>き</rt></ruby>めると、あと いくらで とどくか わかるよ。</p>
+        </section>
+
+        <section class="slide" data-slide="6">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none"><rect x="14" y="20" width="8" height="12" rx="2" fill="#FF7E6B" transform="rotate(18 18 26)"/><rect x="96" y="26" width="8" height="12" rx="2" fill="#3DB66E" transform="rotate(-24 100 32)"/><rect x="26" y="88" width="8" height="12" rx="2" fill="#5B8DEF" transform="rotate(40 30 94)"/><rect x="92" y="86" width="8" height="12" rx="2" fill="#E2231A" transform="rotate(-14 96 92)"/><g transform="translate(28,28) scale(1.02)"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E" stroke="#1B3A6B" stroke-width="1.4"/></g></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">こまったら「やくそく」を みてね。</p></div>
+          <h2 class="slide__title">さあ、はじめよう！</h2>
+          <button class="onb-cta-rules" type="button" data-goto-rules><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.2-4-4L8.3 10.8l2.5 2.5 4.9-4.9 1.5 1.5z"/></svg>「やくそく」を みる</button>
+        </section>
+
+      </div>
+      <div class="onb-nav">
+        <button class="onb-next" type="button" data-next>つぎ<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="4,10 14,10 14,6 21,12 14,18 14,14 4,14"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="stage__col">
+    <div class="stage__cap"><span class="d" style="background:#E2231A;"></span>じゅん — jun_red（アメコミ）</div>
+    <div class="onb-screen" data-theme="jun_red">
+      <div class="onb-decor"></div>
+      <div class="onb-top">
+        <div class="onb-status"><span>9:41</span><span class="r">▮▮▮ 100%</span></div>
+        <div class="onb-dots"><span class="is-active"></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="onb-track">
+
+        <section class="slide" data-slide="0">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="58" r="34" fill="#FFD86F" stroke="#F5B62E" stroke-width="4"/><circle cx="60" cy="58" r="24" fill="none" stroke="#F5B62E" stroke-width="2" opacity=".5"/><text x="60" y="70" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="34" fill="#C98A12">¥</text><path d="M22 30l3 6 6 3-6 3-3 6-3-6-6-3 6-3z" fill="#FF7E6B"/><path d="M96 78l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" fill="#7FC4EC"/><circle cx="98" cy="34" r="4" fill="#FFB199"/></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line"><ruby>自分<rt>じぶん</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>を <ruby>自分<rt>じぶん</rt></ruby>で かんがえて つかう れんしゅうだよ。</p></div>
+          <h2 class="slide__title">ようこそ！じぶんの お<ruby>金<rt>かね</rt></ruby>を つかってみよう</h2>
+        </section>
+
+        <section class="slide" data-slide="1">
+          <div class="slide__art"><div class="art-boxes"><div class="art-box art-box--use">つかう</div><div class="art-box art-box--save">ためる</div><div class="art-box art-box--grow">ふやす</div></div></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">お<ruby>金<rt>かね</rt></ruby>は はこで わけると わかりやすい！</p></div>
+          <h2 class="slide__title">お<ruby>金<rt>かね</rt></ruby>は 3つの はこで わける</h2>
+          <p class="slide__body">「つかう」は すぐ つかう お<ruby>金<rt>かね</rt></ruby>。「ためる」は ほしいものの ための お金。「ふやす」は あずけて ふやす お金。</p>
+        </section>
+
+        <section class="slide" data-slide="2">
+          <div class="slide__art"><div style="display:flex;align-items:center;gap:.5rem;"><div class="art-box art-box--use">つかう</div><span class="art-arrow"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><polygon points="4,10 14,10 14,6 21,12 14,18 14,14 4,14"/></svg></span><div style="display:flex;flex-direction:column;gap:.4rem;"><div class="art-box art-box--save" style="width:52px;height:34px;">ためる</div><div class="art-box art-box--grow" style="width:52px;height:34px;">ふやす</div></div></div></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">もらった お<ruby>金<rt>かね</rt></ruby>は まず ここに くるよ。</p></div>
+          <h2 class="slide__title">もらった お<ruby>金<rt>かね</rt></ruby>は まず「つかう」に <ruby>入<rt>はい</rt></ruby>る</h2>
+          <p class="slide__body">そこから「ためる」や「ふやす」へ、<ruby>自分<rt>じぶん</rt></ruby>で すきなだけ うつせるよ。</p>
+        </section>
+
+        <section class="slide" data-slide="3">
+          <div class="slide__art"><div style="display:flex;flex-direction:column;align-items:center;gap:.7rem;"><div style="display:flex;align-items:center;gap:.4rem;"><span class="coin" style="width:34px;height:34px;font-size:14px;">¥</span><span class="art-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="#1B9E5A"><polygon points="12,4 20,14 4,14"/></svg></span><span class="coin" style="width:40px;height:40px;font-size:16px;">¥</span></div><div class="art-bar"><i style="width:66%;"></i></div></div></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">まつと ふえる！ でも とちゅうで 出せないよ。</p></div>
+          <h2 class="slide__title">「ふやす」に <ruby>入<rt>い</rt></ruby>れると お<ruby>金<rt>かね</rt></ruby>が ふえる</h2>
+          <p class="slide__body"><b>◯</b><ruby>日<rt>にち</rt></ruby> まつと <b>＋◯％</b> ふえて「ためる」に もどるよ。（<ruby>例<rt>れい</rt></ruby>：100<ruby>円<rt>えん</rt></ruby> → <b>102円</b>！）そのあいだは <ruby>取<rt>と</rt></ruby>り<ruby>出<rt>だ</rt></ruby>せないから、まつのが だいじ。</p>
+        </section>
+
+        <section class="slide" data-slide="4">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="30" y="26" width="52" height="64" rx="9" fill="#fff" stroke="#2C7BB0" stroke-width="4"/><path d="M46 26v-6h20v6" stroke="#2C7BB0" stroke-width="4"/><path d="M42 52l10 10 22-24" stroke="#3DB66E" stroke-width="6"/><circle cx="86" cy="82" r="18" fill="#FFD86F" stroke="#F5B62E" stroke-width="3"/><text x="86" y="89" text-anchor="middle" font-family="Zen Maru Gothic,sans-serif" font-weight="900" font-size="18" fill="#C98A12">¥</text></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">がんばった ごほうびに お<ruby>金<rt>かね</rt></ruby>が もらえる！</p></div>
+          <h2 class="slide__title">お<ruby>手<rt>て</rt></ruby>つだいで お<ruby>金<rt>かね</rt></ruby>を かせぐ</h2>
+          <p class="slide__body">お<ruby>仕事<rt>しごと</rt></ruby>を もうしこんで、おうちのひとが OK したら お<ruby>金<rt>かね</rt></ruby>が もらえる。きほんきゅうは <ruby>家族<rt>かぞく</rt></ruby>だから、お仕事は がんばった ごほうびだよ。</p>
+        </section>
+
+        <section class="slide" data-slide="5">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none"><circle cx="56" cy="60" r="42" fill="#FF9E8C"/><circle cx="56" cy="60" r="42" fill="none" stroke="#FF7E6B" stroke-width="3"/><circle cx="56" cy="60" r="28" fill="#fff"/><circle cx="56" cy="60" r="15" fill="#FF7E6B"/><circle cx="56" cy="60" r="5" fill="#fff"/><path d="M84 30v34" stroke="#1B3A6B" stroke-width="4" stroke-linecap="round"/><path d="M84 32h16l-4 6 4 6H84z" fill="#FFD23F" stroke="#1B3A6B" stroke-width="2"/></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">あと いくらで とどくか わかるよ！</p></div>
+          <h2 class="slide__title">ほしいものを もくひょうに できる</h2>
+          <p class="slide__body">「ためる」で ほしいものと きんがくを <ruby>決<rt>き</rt></ruby>めると、あと いくらで とどくか わかるよ。</p>
+        </section>
+
+        <section class="slide" data-slide="6">
+          <div class="slide__art"><svg width="150" height="150" viewBox="0 0 120 120" fill="none"><rect x="14" y="20" width="8" height="12" rx="2" fill="#FF7E6B" transform="rotate(18 18 26)"/><rect x="96" y="26" width="8" height="12" rx="2" fill="#3DB66E" transform="rotate(-24 100 32)"/><rect x="26" y="88" width="8" height="12" rx="2" fill="#5B8DEF" transform="rotate(40 30 94)"/><rect x="92" y="86" width="8" height="12" rx="2" fill="#E2231A" transform="rotate(-14 96 92)"/><g transform="translate(28,28) scale(1.02)"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E" stroke="#1B3A6B" stroke-width="1.4"/></g></svg></div>
+          <div class="slide__mascot"><span class="slide__mascot-badge"><svg width="28" height="28" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18H41M33 21H41M33 24H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20a4 4 0 0 1 8 0v13q11 4.5 22 0v-13a4 4 0 0 1 8 0v13a15 15 0 0 1-38 0Z" fill="#F5B62E"/></svg></span><p class="slide__mascot-line">こまったら「やくそく」を みてね。</p></div>
+          <h2 class="slide__title">さあ、はじめよう！</h2>
+          <button class="onb-cta-rules" type="button" data-goto-rules><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.2-4-4L8.3 10.8l2.5 2.5 4.9-4.9 1.5 1.5z"/></svg>「やくそく」を みる</button>
+        </section>
+
+      </div>
+      <div class="onb-nav">
+        <button class="onb-next" type="button" data-next>つぎ<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="4,10 14,10 14,6 21,12 14,18 14,14 4,14"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#8FD3F4"/><rect x="20" y="26" width="60" height="40" rx="12" fill="#fff"/><circle cx="34" cy="46" r="9" fill="#FF9E8C"/><circle cx="50" cy="46" r="9" fill="#7FC4EC"/><circle cx="66" cy="46" r="9" fill="#FFD86F"/><rect x="38" y="74" width="24" height="7" rx="3.5" fill="#FF7E6B"/></svg>
+</template>
+
+<!-- =========================================================================
+  JavaScript は最小限（スライド送りのみ）。
+  インタラクションは React 側で再実装する前提。JSなしでも各スライドは静的に見える
+  （CSS scroll-snap で横スクロール可能・「つぎ」ボタンで次スライドへスクロール）。
+  ========================================================================= -->
+<script>
+  document.querySelectorAll('.onb-screen').forEach(function (screen) {
+    var track = screen.querySelector('.onb-track');
+    var slides = track.querySelectorAll('.slide');
+    var dots = screen.querySelectorAll('.onb-dots span');
+    function go(i){ i = Math.max(0, Math.min(slides.length - 1, i)); slides[i].scrollIntoView({behavior:'smooth', inline:'start', block:'nearest'}); }
+    screen.querySelectorAll('[data-next]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var cur = Math.round(track.scrollLeft / track.clientWidth);
+        go(cur + 1);
+      });
+    });
+    screen.querySelectorAll('[data-skip]').forEach(function(btn){ btn.addEventListener('click', function(){ go(slides.length - 1); }); });
+    // ドット同期（任意）
+    track.addEventListener('scroll', function(){
+      var cur = Math.round(track.scrollLeft / track.clientWidth);
+      dots.forEach(function(d, i){ d.classList.toggle('is-active', i === cur); });
+    });
+  });
+</script>
+</body>
+</html>

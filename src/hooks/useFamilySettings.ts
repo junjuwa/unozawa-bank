@@ -8,7 +8,6 @@ export type FamilySettingsRow = {
   base_salary: number;
   investment_rate: number;
   maturity_days: number;
-  promises: string[];
 };
 
 // family_settingsを1行取得する（settings_select RLSで自家族分のみ）。未ログインならnull。
@@ -27,7 +26,7 @@ export function useFamilySettings() {
 
     const { data } = await supabase
       .from("family_settings")
-      .select("family_id, base_salary, investment_rate, maturity_days, promises")
+      .select("family_id, base_salary, investment_rate, maturity_days")
       .single();
 
     setSettings((data as FamilySettingsRow) ?? null);

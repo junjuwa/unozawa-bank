@@ -346,19 +346,7 @@ export default function SettingsPage() {
         </section>
       </Link>
 
-      <Link href="/settings/promises" style={{ display: "block", textDecoration: "none" }}>
-        <section
-          style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-        >
-          <div>
-            <h2 style={{ fontWeight: 800, fontSize: 14, color: theme.ink }}>やくそく（約束）</h2>
-            <p style={{ fontSize: 11, color: theme.sub, marginTop: 2 }}>子供画面に表示するやくそくを編集</p>
-          </div>
-          <span style={{ fontSize: 16, color: theme.sub }}>›</span>
-        </section>
-      </Link>
-
-      {isReal && (
+{isReal && (
         <section
           style={{ background: theme.cardBg, borderRadius: theme.cardRadius, border: theme.cardBorder, padding: 16 }}
         >

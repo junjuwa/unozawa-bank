@@ -24,6 +24,11 @@ export interface ChildTheme {
   navActiveBg: string;
   navIdle: string;
   coin: "gold-soft" | "gold-hard" | "none";
+  dotIdle: string;
+  titleShadow: string;
+  numColor: string;
+  badgeFg: string;
+  hair: string;
 }
 
 export const childThemes: Record<ThemeKey, ChildTheme> = {
@@ -47,6 +52,11 @@ export const childThemes: Record<ThemeKey, ChildTheme> = {
     navActiveBg: "#FFE3DC",
     navIdle: "#9bbdd6",
     coin: "gold-soft",
+    dotIdle: "#BFE0F2",
+    titleShadow: "none",
+    numColor: "#8FBEDD",
+    badgeFg: "#ffffff",
+    hair: "rgba(27,58,107,.10)",
   },
   // じゅん: アメコミ(極太・太黒枠・ハード影)
   jun_red: {
@@ -70,6 +80,11 @@ export const childThemes: Record<ThemeKey, ChildTheme> = {
     navActiveBg: "",
     navIdle: "#102A54",
     coin: "gold-hard",
+    dotIdle: "rgba(255,255,255,.4)",
+    titleShadow: "2px 2px 0 #111",
+    numColor: "#9DBEE8",
+    badgeFg: "#ffffff",
+    hair: "rgba(16,42,84,.12)",
   },
   // 親: ダークグレー管理UI
   parent_dark: {
@@ -92,5 +107,10 @@ export const childThemes: Record<ThemeKey, ChildTheme> = {
     navActiveBg: "",
     navIdle: "#6E7884",
     coin: "none",
+    dotIdle: "#4A525C",
+    titleShadow: "none",
+    numColor: "#6E7884",
+    badgeFg: "#ffffff",
+    hair: "rgba(255,255,255,.08)",
   },
 };

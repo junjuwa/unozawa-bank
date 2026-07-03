@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="design_doc_mode" content="canvas">
+<title>UNOZAWA BANK — おやくそく</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=RocknRoll+One&display=swap" rel="stylesheet">
+<style>
+/* =========================================================================
+   UNOZAWA BANK — おやくそく（価値観の約束）画面
+   ・構造/クラスは両テーマ完全共通。skin（配色・質感）だけ [data-theme] で差し替え。
+   ・テーマ値は先頭の CSSカスタムプロパティ（既存 ChildTheme のトークン名）で定義。
+   ・PromiseCard は <section class="promise-card"> 単位で独立（React へ1:1分解可能）。
+   ========================================================================= */
+
+/* ---- テーマトークン（rei_blue / jun_red）------------------------------- */
+[data-theme="rei_blue"]{
+  --font-family:'Zen Maru Gothic', system-ui, sans-serif;
+  --frame-bg:linear-gradient(180deg,#CDEEFF 0%,#BFE9FF 30%,#A6DEF7 70%,#8FD3F4 100%);
+  --ink:#1B3A6B; --sub:#2c6f96;
+  --accent:#FF7E6B; --accent-ink:#FF6B55;
+  --card-bg:#ffffff; --card-radius:28px;
+  --card-shadow:0 14px 30px rgba(27,58,107,.16);
+  --card-border:none;
+  --nav-active:#FF7E6B;
+  /* 補助（トークン外・スキン専用） */
+  --badge-fg:#fff; --hair:rgba(27,58,107,.10);
+  --title-shadow:none; --heading-weight:900; --num-color:#8FBEDD;
+}
+[data-theme="jun_red"]{
+  --font-family:'RocknRoll One', system-ui, sans-serif;
+  --frame-bg:#1B6CD9;
+  --ink:#102A54; --sub:#1B6CD9;
+  --accent:#E2231A; --accent-ink:#E2231A;
+  --card-bg:#ffffff; --card-radius:12px;
+  --card-shadow:6px 6px 0 #111;
+  --card-border:3px solid #111;
+  --nav-active:#E2231A;
+  --badge-fg:#fff; --hair:rgba(16,42,84,.12);
+  --title-shadow:2px 2px 0 #111; --heading-weight:400; --num-color:#9DBEE8;
+}
+
+*{box-sizing:border-box;}
+
+/* ---- 画面フレーム ---- */
+.promise-screen{
+  position:relative;
+  width:390px;
+  min-height:844px;
+  overflow:hidden;
+  font-family:var(--font-family);
+  color:var(--ink);
+  background:var(--frame-bg);
+  border-radius:38px;
+  box-shadow:0 24px 60px rgba(27,58,107,.26);
+  padding:0 1.25rem 2rem;
+  --gap:1.25rem;
+}
+.promise-screen--flat{border-radius:0;box-shadow:none;min-height:100%;}
+
+/* テーマ装飾層（rei=水彩ブロブ / jun=網点＋集中線） */
+.promise-screen__decor{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+[data-theme="rei_blue"] .promise-screen__decor::before,
+[data-theme="rei_blue"] .promise-screen__decor::after{
+  content:"";position:absolute;border-radius:50%;filter:blur(30px);
+}
+[data-theme="rei_blue"] .promise-screen__decor::before{width:220px;height:220px;background:rgba(255,255,255,.5);top:-50px;right:-40px;}
+[data-theme="rei_blue"] .promise-screen__decor::after{width:200px;height:200px;background:rgba(255,126,107,.16);bottom:120px;left:-60px;}
+[data-theme="rei_blue"] .promise-screen__decor i{position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(255,210,63,.18);filter:blur(28px);top:44%;right:-40px;}
+[data-theme="jun_red"] .promise-screen__decor{
+  background-image:radial-gradient(rgba(255,255,255,.16) 1.6px, transparent 1.7px);
+  background-size:13px 13px;
+}
+[data-theme="jun_red"] .promise-screen__decor::before{
+  content:"";position:absolute;top:-90px;right:-90px;width:300px;height:300px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.14) 0deg 3deg, transparent 3deg 9deg);
+  -webkit-mask:radial-gradient(circle,#000 28%,transparent 60%); mask:radial-gradient(circle,#000 28%,transparent 60%);
+}
+[data-theme="jun_red"] .promise-screen__decor::after{
+  content:"";position:absolute;bottom:-110px;left:-110px;width:280px;height:280px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,210,63,.16) 0deg 3deg, transparent 3deg 9deg);
+  -webkit-mask:radial-gradient(circle,#000 28%,transparent 60%); mask:radial-gradient(circle,#000 28%,transparent 60%);
+}
+
+.promise-screen__inner{position:relative;z-index:1;}
+
+/* ---- ステータスバー（飾り） ---- */
+.promise-status{display:flex;justify-content:space-between;align-items:center;
+  padding:.9rem .5rem .25rem;font:700 .8rem var(--font-family);color:var(--ink);}
+[data-theme="jun_red"] .promise-status{color:#fff;text-shadow:1px 1px 0 #111;}
+.promise-status .r{letter-spacing:2px;}
+
+/* ---- ヘッダー（宣言感） ---- */
+.promise-header{text-align:center;padding:1.25rem .5rem .5rem;}
+.promise-header__eyebrow{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font:700 .72rem var(--font-family);letter-spacing:.14em;
+  color:var(--sub);text-transform:none;margin-bottom:.7rem;
+}
+.promise-header__eyebrow::before,.promise-header__eyebrow::after{content:"";width:20px;height:2px;border-radius:2px;background:currentColor;opacity:.5;}
+.promise-header__title{
+  margin:0;line-height:1.5;
+  font:var(--heading-weight) 1.65rem var(--font-family);
+  color:var(--ink);text-shadow:var(--title-shadow);
+}
+[data-theme="jun_red"] .promise-header__title{
+  color:#fff;text-shadow:2px 2px 0 #111,-2px 2px 0 #111,2px -2px 0 #111,-2px -2px 0 #111,0 3px 0 #111;
+}
+.promise-header__title .u-name{color:var(--accent-ink);}
+[data-theme="jun_red"] .promise-header__title .u-name{color:#FFD23F;-webkit-text-stroke:0;}
+
+/* ---- マスコット導入 ---- */
+.promise-intro{display:flex;align-items:center;gap:.75rem;
+  padding:.75rem;margin:.75rem 0 1.25rem;}
+.promise-intro__badge{
+  width:56px;height:56px;flex-shrink:0;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  border:3px solid #fff;box-shadow:0 6px 14px rgba(27,58,107,.2);
+}
+[data-theme="jun_red"] .promise-intro__badge{border:3px solid #111;box-shadow:3px 3px 0 #111;border-radius:14px;}
+.promise-intro__bubble{
+  flex:1;background:var(--card-bg);border:var(--card-border);
+  border-radius:18px 18px 18px 6px;padding:.7rem .9rem;
+  font:700 .82rem var(--font-family);color:var(--ink);line-height:1.9;
+  box-shadow:var(--card-shadow);
+}
+[data-theme="jun_red"] .promise-intro__bubble{font-weight:400;border-radius:14px;box-shadow:4px 4px 0 #111;}
+
+/* ---- 約束カード（ヒーロー級・独立ユニット） ---- */
+.promise-list{display:flex;flex-direction:column;gap:var(--gap);}
+.promise-card{
+  position:relative;background:var(--card-bg);border:var(--card-border);
+  border-radius:var(--card-radius);box-shadow:var(--card-shadow);
+  padding:1.6rem 1.4rem 1.5rem;
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:.9rem;
+}
+.promise-card__num{
+  position:absolute;top:1rem;left:1.15rem;
+  font:var(--heading-weight) .78rem var(--font-family);letter-spacing:.1em;color:var(--sub);
+  display:inline-flex;align-items:center;gap:.35rem;
+}
+.promise-card__num b{font-size:1.15rem;color:var(--accent-ink);line-height:1;}
+[data-theme="jun_red"] .promise-card__num b{color:#E2231A;}
+.promise-card__seal{
+  position:absolute;top:.85rem;right:1.1rem;width:26px;height:26px;color:var(--num-color);opacity:.85;
+}
+
+.promise-card__icon{
+  width:76px;height:76px;border-radius:24px;margin-top:.4rem;
+  display:flex;align-items:center;justify-content:center;color:var(--badge-fg);
+  box-shadow:0 8px 16px rgba(27,58,107,.16);
+}
+[data-theme="jun_red"] .promise-card__icon{border:3px solid #111;box-shadow:3px 3px 0 #111;border-radius:16px;}
+/* カードごとのアクセント色（意味を色でも補助・状態ではなく分類） */
+.promise-card--money  .promise-card__icon{background:linear-gradient(135deg,#FFE07A,#FFC53F);color:#8A5A00;}
+.promise-card--think  .promise-card__icon{background:linear-gradient(135deg,#8FD3F4,#5CB3E6);}
+.promise-card--work   .promise-card__icon{background:linear-gradient(135deg,#FF9E8C,#FF7E6B);}
+.promise-card--grow   .promise-card__icon{background:linear-gradient(135deg,#7FE0A8,#3DB66E);}
+.promise-card--self   .promise-card__icon{background:linear-gradient(135deg,#B7A6F0,#8C74E0);}
+[data-theme="jun_red"] .promise-card--money .promise-card__icon{background:#FFD23F;color:#111;}
+[data-theme="jun_red"] .promise-card--think .promise-card__icon{background:#1B6CD9;}
+[data-theme="jun_red"] .promise-card--work  .promise-card__icon{background:#E2231A;}
+[data-theme="jun_red"] .promise-card--grow  .promise-card__icon{background:#1B9E5A;}
+[data-theme="jun_red"] .promise-card--self  .promise-card__icon{background:#7A5CD0;}
+
+.promise-card__title{
+  margin:0;font:var(--heading-weight) 1.28rem var(--font-family);
+  color:var(--ink);line-height:1.7;
+}
+[data-theme="jun_red"] .promise-card__title{line-height:1.6;}
+.promise-card__note{
+  margin:0;font:700 .82rem var(--font-family);color:var(--sub);line-height:1.9;
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:var(--hair);border-radius:999px;padding:.4rem .9rem;
+}
+[data-theme="jun_red"] .promise-card__note{font-weight:400;border:2px solid #111;background:#fff;border-radius:8px;}
+.promise-card__note svg{flex-shrink:0;}
+
+.promise-card ruby rt{font-size:.5em;font-weight:500;letter-spacing:.02em;}
+
+/* ---- フッター（やさしく） ---- */
+.promise-footer{text-align:center;padding:1.75rem .5rem .5rem;}
+.promise-footer__line{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font:var(--heading-weight) 1rem var(--font-family);color:var(--ink);
+}
+[data-theme="jun_red"] .promise-footer__line{color:#fff;text-shadow:1.5px 1.5px 0 #111;}
+.promise-footer__line svg{color:var(--accent);}
+[data-theme="jun_red"] .promise-footer__line svg{color:#FFD23F;}
+.promise-footer__sub{margin:.5rem 0 0;font:700 .74rem var(--font-family);color:var(--sub);}
+[data-theme="jun_red"] .promise-footer__sub{color:#EAF2FF;font-weight:400;}
+
+/* =========================================================================
+   キャンバス台紙（プレビュー用・実装には不要）
+   ========================================================================= */
+body{margin:0;font-family:'Zen Maru Gothic',system-ui,sans-serif;
+  background:#EAEDF2;background-image:radial-gradient(circle,rgba(0,0,0,.05) 1px,transparent 1.5px);background-size:22px 22px;}
+.stage{display:flex;gap:64px;align-items:flex-start;padding:56px 72px 90px;width:max-content;min-width:100%;}
+.stage__col{display:flex;flex-direction:column;gap:12px;}
+.stage__cap{font:600 13px system-ui;color:#37526e;display:flex;align-items:center;gap:8px;}
+.stage__cap .d{width:11px;height:11px;border-radius:50%;}
+.stage__note{font:400 12px system-ui;color:#6b7480;max-width:820px;line-height:1.7;margin:0 0 6px;}
+.stage__h{font:800 20px 'Zen Maru Gothic';color:#20293a;margin:0;}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="stage__col" style="width:100%;">
+    <h1 class="stage__h">UNOZAWA BANK — おやくそく（価値観の約束）</h1>
+    <p class="stage__note">親子で交わす“約束”を子どもに見せる、静かで特別感のある1画面。オンボーディング（読み流す情報）とは別トーンの、宣言的でヒーロー級の扱い。構造は両テーマ共通、skin だけ <code>[data-theme]</code> で切替。</p>
+  </div>
+</div>
+<div class="stage" style="padding-top:0;">
+
+  <!-- ===================== れい（水彩） ===================== -->
+  <div class="stage__col">
+    <div class="stage__cap"><span class="d" style="background:#FF7E6B;"></span>れい — rei_blue（水彩）</div>
+
+    <div class="promise-screen" data-theme="rei_blue">
+      <div class="promise-screen__decor"><i></i></div>
+      <div class="promise-screen__inner">
+
+        <div class="promise-status"><span>9:41</span><span class="r">▮▮▮ 100%</span></div>
+
+        <header class="promise-header">
+          <span class="promise-header__eyebrow">やくそく</span>
+          <h2 class="promise-header__title"><span class="u-name">れい</span>と おうちのひとの やくそく</h2>
+        </header>
+
+        <div class="promise-intro">
+          <div class="promise-intro__badge">
+            <svg width="34" height="34" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18 H41 M33 21 H41 M33 24 H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20 a4 4 0 0 1 8 0 v13 q11 4.5 22 0 v-13 a4 4 0 0 1 8 0 v13 a15 15 0 0 1 -38 0 Z" fill="#F5B62E"/></svg>
+          </div>
+          <div class="promise-intro__bubble">いっしょに やくそく しようね</div>
+        </div>
+
+        <div class="promise-list">
+
+          <section class="promise-card promise-card--money">
+            <span class="promise-card__num">その <b>1</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l3 3 3-3M12 12v3.5M9.8 13h4.4M9.8 15h4.4"/></svg>
+            </div>
+            <h3 class="promise-card__title">お<ruby>金<rt>かね</rt></ruby>は <ruby>大事<rt>だいじ</rt></ruby>に つかう</h3>
+          </section>
+
+          <section class="promise-card promise-card--think">
+            <span class="promise-card__num">その <b>2</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a6 6 0 0 1 3 11.2V17a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.8A6 6 0 0 1 12 4Z"/><path d="M10 21h4"/></svg>
+            </div>
+            <h3 class="promise-card__title">お<ruby>金<rt>かね</rt></ruby>の つかいかたは よく <ruby>考<rt>かんが</rt></ruby>えてから きめる</h3>
+            <p class="promise-card__note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>「ほしい」と「ひつよう」は ちがうよ</p>
+          </section>
+
+          <section class="promise-card promise-card--work">
+            <span class="promise-card__num">その <b>3</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V3.5h6V5"/><path d="M8.4 12.6l2.3 2.3 4.6-4.6"/></svg>
+            </div>
+            <h3 class="promise-card__title">お<ruby>手<rt>て</rt></ruby>つだいを がんばると、お<ruby>金<rt>かね</rt></ruby>が もらえる</h3>
+          </section>
+
+          <section class="promise-card promise-card--grow">
+            <span class="promise-card__num">その <b>4</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-7"/><path d="M12 13c0-3 2.4-5.5 5.5-5.5C17.5 11 15 13 12 13Z"/><path d="M12 13c0-2.6-2.1-4.8-4.8-4.8C7.2 11.4 9.4 13 12 13Z"/></svg>
+            </div>
+            <h3 class="promise-card__title">がまんして ためると、いいことが ある</h3>
+          </section>
+
+          <section class="promise-card promise-card--self">
+            <span class="promise-card__num">その <b>5</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5,8.5 10.5,10.5 8.5,15.5 13.5,13.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="#fff" stroke="none"/></svg>
+            </div>
+            <h3 class="promise-card__title"><ruby>自分<rt>じぶん</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>の つかいかたは <ruby>自分<rt>じぶん</rt></ruby>で きめる</h3>
+            <p class="promise-card__note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-4 3z"/></svg>こまったら おうちのひとに <ruby>相談<rt>そうだん</rt></ruby>してね</p>
+          </section>
+
+        </div>
+
+        <footer class="promise-footer">
+          <span class="promise-footer__line">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9"/></svg>
+            まもれると かっこいいね
+          </span>
+          <p class="promise-footer__sub">ゆっくりで だいじょうぶ</p>
+        </footer>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== じゅん（アメコミ） ===================== -->
+  <div class="stage__col">
+    <div class="stage__cap"><span class="d" style="background:#E2231A;"></span>じゅん — jun_red（アメコミ）</div>
+
+    <div class="promise-screen" data-theme="jun_red">
+      <div class="promise-screen__decor"></div>
+      <div class="promise-screen__inner">
+
+        <div class="promise-status"><span>9:41</span><span class="r">▮▮▮ 100%</span></div>
+
+        <header class="promise-header">
+          <span class="promise-header__eyebrow">やくそく</span>
+          <h2 class="promise-header__title"><span class="u-name">じゅん</span>と おうちのひとの やくそく</h2>
+        </header>
+
+        <div class="promise-intro">
+          <div class="promise-intro__badge">
+            <svg width="34" height="34" viewBox="0 0 64 64" fill="none"><rect x="19" y="13" width="26" height="16" rx="2.5" fill="#FFD86F"/><circle cx="26" cy="21" r="4.3" fill="none" stroke="#1B3A6B" stroke-width="1.6"/><path d="M33 18 H41 M33 21 H41 M33 24 H38" stroke="#1B3A6B" stroke-width="1.4" stroke-linecap="round"/><path d="M13 20 a4 4 0 0 1 8 0 v13 q11 4.5 22 0 v-13 a4 4 0 0 1 8 0 v13 a15 15 0 0 1 -38 0 Z" fill="#F5B62E"/></svg>
+          </div>
+          <div class="promise-intro__bubble">いっしょに やくそく しようね</div>
+        </div>
+
+        <div class="promise-list">
+
+          <section class="promise-card promise-card--money">
+            <span class="promise-card__num">その <b>1</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l3 3 3-3M12 12v3.5M9.8 13h4.4M9.8 15h4.4"/></svg>
+            </div>
+            <h3 class="promise-card__title">お<ruby>金<rt>かね</rt></ruby>は <ruby>大事<rt>だいじ</rt></ruby>に つかう</h3>
+          </section>
+
+          <section class="promise-card promise-card--think">
+            <span class="promise-card__num">その <b>2</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a6 6 0 0 1 3 11.2V17a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.8A6 6 0 0 1 12 4Z"/><path d="M10 21h4"/></svg>
+            </div>
+            <h3 class="promise-card__title">お<ruby>金<rt>かね</rt></ruby>の つかいかたは よく <ruby>考<rt>かんが</rt></ruby>えてから きめる</h3>
+            <p class="promise-card__note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>「ほしい」と「ひつよう」は ちがうよ</p>
+          </section>
+
+          <section class="promise-card promise-card--work">
+            <span class="promise-card__num">その <b>3</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V3.5h6V5"/><path d="M8.4 12.6l2.3 2.3 4.6-4.6"/></svg>
+            </div>
+            <h3 class="promise-card__title">お<ruby>手<rt>て</rt></ruby>つだいを がんばると、お<ruby>金<rt>かね</rt></ruby>が もらえる</h3>
+          </section>
+
+          <section class="promise-card promise-card--grow">
+            <span class="promise-card__num">その <b>4</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-7"/><path d="M12 13c0-3 2.4-5.5 5.5-5.5C17.5 11 15 13 12 13Z"/><path d="M12 13c0-2.6-2.1-4.8-4.8-4.8C7.2 11.4 9.4 13 12 13Z"/></svg>
+            </div>
+            <h3 class="promise-card__title">がまんして ためると、いいことが ある</h3>
+          </section>
+
+          <section class="promise-card promise-card--self">
+            <span class="promise-card__num">その <b>5</b></span>
+            <svg class="promise-card__seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div class="promise-card__icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5,8.5 10.5,10.5 8.5,15.5 13.5,13.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="#fff" stroke="none"/></svg>
+            </div>
+            <h3 class="promise-card__title"><ruby>自分<rt>じぶん</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>の つかいかたは <ruby>自分<rt>じぶん</rt></ruby>で きめる</h3>
+            <p class="promise-card__note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-4 3z"/></svg>こまったら おうちのひとに <ruby>相談<rt>そうだん</rt></ruby>してね</p>
+          </section>
+
+        </div>
+
+        <footer class="promise-footer">
+          <span class="promise-footer__line">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9"/></svg>
+            まもれると かっこいいね
+          </span>
+          <p class="promise-footer__sub">ゆっくりで だいじょうぶ</p>
+        </footer>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#8FD3F4"/><rect x="26" y="20" width="48" height="26" rx="9" fill="#fff"/><circle cx="50" cy="33" r="8" fill="#FFC53F"/><rect x="26" y="54" width="48" height="26" rx="9" fill="#fff"/><circle cx="50" cy="67" r="8" fill="#3DB66E"/></svg>
+</template>
+
+<!-- =========================================================================
+  JavaScript は最小限・任意。JSなしでも全カードは静的に成立する。
+  下記は「1フレームでライブにテーマ切替」を試したい場合の任意デモ。
+  実装（Next.js）では data-theme を親から与えるため不要。
+  ========================================================================= -->
+<script>
+  // [任意] 各フレームをクリックすると rei_blue ⇄ jun_red を切替（デモ用）
+  document.querySelectorAll('.promise-screen').forEach(function (el) {
+    el.addEventListener('dblclick', function () {
+      el.dataset.theme = el.dataset.theme === 'rei_blue' ? 'jun_red' : 'rei_blue';
+    });
+  });
+</script>
+</body>
+</html>
