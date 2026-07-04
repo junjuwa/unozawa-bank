@@ -34,6 +34,11 @@ export default function ApprovalsPage() {
   }
 
   // 実ログイン済み（requests !== null）なら実DB、未ログインならモックにフォールバック
+  function fmtDate(iso: string): string {
+    const d = new Date(iso);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
   if (requests) {
     const filtered =
       filter === "all"
@@ -103,6 +108,7 @@ export default function ApprovalsPage() {
                   childName={r.profiles?.display_name ?? ""}
                   jobName={r.job_tasks?.name ?? ""}
                   reward={r.reward_snapshot}
+                  requestedAt={r.requested_at}
                   onApprove={() => handleApprove(r.id)}
                   onReject={() => handleReject(r.id)}
                 />
@@ -124,15 +130,40 @@ export default function ApprovalsPage() {
             {history.length === 0 ? (
               <p style={{ fontSize: 12, color: theme.sub }}>まだ ありません</p>
             ) : (
-              <ul className="flex flex-col gap-2">
-                {history.map((r) => (
-                  <li key={r.id} style={{ fontSize: 13, display: "flex", justifyContent: "space-between" }}>
-                    <span>
-                      {r.profiles?.display_name ?? ""} — {r.job_tasks?.name ?? ""}
-                    </span>
-                    <span style={{ color: r.status === "approved" ? "#3DB66E" : "#E26D62" }}>
-                      {r.status === "approved" ? "承認" : "却下"} ¥{r.reward_snapshot}
-                    </span>
+              <ul className="flex flex-col" style={{ gap: 0 }}>
+                {history.map((r, i) => (
+                  <li
+                    key={r.id}
+                    style={{
+                      padding: "10px 0",
+                      borderBottom: i < history.length - 1 ? `1px solid rgba(255,255,255,.07)` : "none",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 8,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: theme.ink }}>
+                        {r.profiles?.display_name ?? ""} — {r.job_tasks?.name ?? ""}
+                      </div>
+                      <div style={{ fontSize: 11, color: theme.sub, marginTop: 3 }}>
+                        申請: {fmtDate(r.requested_at)}
+                      </div>
+                      {r.decided_at && (
+                        <div style={{ fontSize: 11, color: theme.sub }}>
+                          決定: {fmtDate(r.decided_at)}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ color: r.status === "approved" ? "#3DB66E" : "#E26D62", fontWeight: 700, fontSize: 12 }}>
+                        {r.status === "approved" ? "承認" : "却下"}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: theme.accentInk }}>
+                        ¥{new Intl.NumberFormat("ja-JP").format(r.reward_snapshot)}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>

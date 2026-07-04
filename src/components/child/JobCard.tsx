@@ -7,12 +7,19 @@ import { JobStatus, STATUS_COLORS } from "@/lib/theme/statusColors";
 import { ConditionPopup } from "@/components/child/ConditionPopup";
 import { ApprovedIcon, RejectedIcon, PendingIcon } from "@/components/child/statusIcons";
 
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export function JobCard({
   theme,
   status: jobStatus,
   name,
   reward,
   condition,
+  requestedAt,
+  decidedAt,
   onApply,
 }: {
   theme: ChildTheme;
@@ -20,6 +27,8 @@ export function JobCard({
   name: string;
   reward: number;
   condition: string;
+  requestedAt?: string;
+  decidedAt?: string | null;
   onApply: () => void;
 }) {
   const status = STATUS_COLORS[jobStatus];
@@ -86,26 +95,38 @@ export function JobCard({
             {status.label}
           </button>
         ) : (
-          <span
-            style={{
-              color: status.fg,
-              background: status.bg,
-              border: status.border ? `1px solid ${status.border}` : undefined,
-              borderRadius: 20,
-              padding: "6px 14px",
-              fontWeight: 800,
-              fontSize: 12,
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            {jobStatus === "approved" && <ApprovedIcon size={14} />}
-            {jobStatus === "rejected" && <RejectedIcon size={14} />}
-            {jobStatus === "pending" && <PendingIcon size={14} />}
-            {status.label}
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+            <span
+              style={{
+                color: status.fg,
+                background: status.bg,
+                border: status.border ? `1px solid ${status.border}` : undefined,
+                borderRadius: 20,
+                padding: "6px 14px",
+                fontWeight: 800,
+                fontSize: 12,
+                whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              {jobStatus === "approved" && <ApprovedIcon size={14} />}
+              {jobStatus === "rejected" && <RejectedIcon size={14} />}
+              {jobStatus === "pending" && <PendingIcon size={14} />}
+              {status.label}
+            </span>
+            {requestedAt && (jobStatus === "pending") && (
+              <span style={{ fontSize: 10, color: theme.sub, whiteSpace: "nowrap" }}>
+                もうしこみ: {fmtDate(requestedAt)}
+              </span>
+            )}
+            {decidedAt && (jobStatus === "approved" || jobStatus === "rejected") && (
+              <span style={{ fontSize: 10, color: theme.sub, whiteSpace: "nowrap" }}>
+                けってい: {fmtDate(decidedAt)}
+              </span>
+            )}
+          </div>
         )}
       </div>
 

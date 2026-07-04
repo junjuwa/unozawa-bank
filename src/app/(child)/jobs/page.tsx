@@ -25,6 +25,11 @@ export default function JobsPage() {
   if (catalogLoading || requestsLoading) return <LoadingScreen />;
 
   // 実ログイン済み（catalog !== null）なら実DB、未ログインならモックにフォールバック
+  function fmtDate(iso: string): string {
+    const d = new Date(iso);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
   if (catalog) {
     async function handleApply(taskId: string, reward: number) {
       setApplyMessage(null);
@@ -41,7 +46,7 @@ export default function JobsPage() {
         setApplyMessage({ taskId, ok: false, text: "しんせいに しっぱいしました" });
         return;
       }
-      setApplyMessage({ taskId, ok: true, text: "しんせいしました！" });
+      setApplyMessage({ taskId, ok: true, text: "もうしこみました！" });
       refetch();
     }
 
@@ -62,6 +67,7 @@ export default function JobsPage() {
                 name={task.name}
                 reward={pendingRequest ? pendingRequest.reward_snapshot : task.reward}
                 condition={task.condition}
+                requestedAt={pendingRequest?.requested_at}
                 onApply={() => handleApply(task.id, task.reward)}
               />
               {applyMessage && applyMessage.taskId === task.id && (
@@ -78,7 +84,15 @@ export default function JobsPage() {
             <h2 style={{ fontWeight: 800, fontSize: 13, color: theme.sub, marginBottom: 8 }}>
               さいきんの けっか
             </h2>
-            <div className="flex flex-col gap-2">
+            <div
+              style={{
+                background: theme.cardBg,
+                borderRadius: theme.cardRadius,
+                border: theme.cardBorder,
+                boxShadow: theme.cardShadow,
+                padding: "4px 0",
+              }}
+            >
               {requests
                 .filter((r) => r.decided_at)
                 .slice(0, 5)
@@ -87,15 +101,36 @@ export default function JobsPage() {
                     key={r.id}
                     style={{
                       display: "flex",
+                      alignItems: "center",
                       justifyContent: "space-between",
-                      fontSize: 13,
-                      color: theme.sub,
+                      padding: "10px 14px",
+                      borderBottom: `1px solid rgba(0,0,0,.06)`,
                     }}
                   >
-                    <span>{r.job_tasks?.name ?? ""}</span>
-                    <span style={{ color: r.status === "approved" ? "#3DB66E" : "#E26D62" }}>
-                      {r.status === "approved" ? "OK！承認" : "却下"}
-                    </span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 13, color: theme.ink }}>
+                        {r.job_tasks?.name ?? ""}
+                      </div>
+                      <div style={{ fontSize: 10, color: theme.sub, marginTop: 2 }}>
+                        もうしこみ: {fmtDate(r.requested_at)}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div
+                        style={{
+                          fontWeight: 800,
+                          fontSize: 12,
+                          color: r.status === "approved" ? "#2E9C5B" : "#E26D62",
+                        }}
+                      >
+                        {r.status === "approved" ? "OK！もらえた" : "だめだった"}
+                      </div>
+                      {r.decided_at && (
+                        <div style={{ fontSize: 10, color: theme.sub, marginTop: 2 }}>
+                          けってい: {fmtDate(r.decided_at)}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
             </div>

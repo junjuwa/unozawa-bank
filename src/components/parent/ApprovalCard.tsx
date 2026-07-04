@@ -1,10 +1,16 @@
 import { ChildTheme } from "@/lib/theme/childTheme";
 
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export function ApprovalCard({
   theme,
   childName,
   jobName,
   reward,
+  requestedAt,
   onApprove,
   onReject,
 }: {
@@ -12,6 +18,7 @@ export function ApprovalCard({
   childName: string;
   jobName: string;
   reward: number;
+  requestedAt?: string;
   onApprove: () => void;
   onReject: () => void;
 }) {
@@ -34,6 +41,11 @@ export function ApprovalCard({
         <div style={{ fontWeight: 900, fontSize: 18, color: theme.accentInk }}>
           ¥{new Intl.NumberFormat("ja-JP").format(reward)}
         </div>
+        {requestedAt && (
+          <div style={{ fontSize: 11, color: theme.sub, marginTop: 2 }}>
+            申請: {fmtDate(requestedAt)}
+          </div>
+        )}
       </div>
       <div className="flex gap-2">
         <button
