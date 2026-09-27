@@ -19,11 +19,11 @@ function daysAgo(n: number) {
 
 export const INVEST_LOTS: Record<ThemeKey, InvestLot[]> = {
   rei_blue: [
-    { id: "lot1", principal: 300, remainingDays: 3,  totalDays: 30, interestAmount: 315, startedAt: daysAgo(27) },
-    { id: "lot2", principal: 200, remainingDays: 18, totalDays: 30, interestAmount: 210, startedAt: daysAgo(12) },
+    { id: "lot1", principal: 300, remainingDays: 3,  totalDays: 30, interestAmount: 15, startedAt: daysAgo(27) },
+    { id: "lot2", principal: 200, remainingDays: 18, totalDays: 30, interestAmount: 10, startedAt: daysAgo(12) },
   ],
   jun_red: [
-    { id: "lot1", principal: 500, remainingDays: 12, totalDays: 30, interestAmount: 525, startedAt: daysAgo(18) },
+    { id: "lot1", principal: 500, remainingDays: 12, totalDays: 30, interestAmount: 25, startedAt: daysAgo(18) },
   ],
   parent_dark: [],
 };

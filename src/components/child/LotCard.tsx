@@ -11,7 +11,7 @@ export function LotCard({ theme, lot, index, total }: { theme: ChildTheme; lot: 
   const n = (index ?? 0) + 1;
   const badge = (total ?? 1) > 1 ? `${dateLabel} ${n}` : dateLabel;
 
-  const interest = Math.max(0, lot.interestAmount - lot.principal);
+  const interest = Math.max(0, lot.interestAmount);
   const ratePct = lot.principal > 0 ? Math.round((interest / lot.principal) * 100) : 0;
   const progress = lot.totalDays > 0 ? Math.min(100, Math.round(((lot.totalDays - lot.remainingDays) / lot.totalDays) * 100)) : 0;
 
